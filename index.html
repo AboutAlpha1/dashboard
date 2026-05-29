@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0F172A">
 <title>어바웃알파 대시보드</title>
 <style>
@@ -11,63 +11,72 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
   background:#F1F5F9;color:#0F172A;min-height:100vh;-webkit-font-smoothing:antialiased}
 
 /* ── Header ── */
-.header{
-  background:linear-gradient(150deg,#0F172A 0%,#1E3A5F 60%,#1D4ED8 100%);
-  color:#fff;padding:28px 20px 24px;position:sticky;top:0;z-index:10;
-}
-.header-brand{font-size:12px;font-weight:600;letter-spacing:2px;opacity:.6;text-transform:uppercase}
-.header-month{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-0.5px}
-.header-updated{font-size:11px;opacity:.45;margin-top:5px}
+.hdr{background:linear-gradient(150deg,#0F172A 0%,#1E3A5F 60%,#1D4ED8 100%);
+  color:#fff;padding:24px 20px 0;position:sticky;top:0;z-index:10}
+.hdr-brand{font-size:11px;font-weight:600;letter-spacing:2px;opacity:.55;text-transform:uppercase}
+.hdr-month{font-size:24px;font-weight:800;margin-top:4px;letter-spacing:-.5px}
+.hdr-updated{font-size:10px;opacity:.4;margin-top:3px;padding-bottom:10px}
+
+/* ── Month nav ── */
+.mnav{display:flex;gap:6px;overflow-x:auto;padding:10px 20px 14px;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mnav::-webkit-scrollbar{display:none}
+.mpill{flex-shrink:0;background:rgba(255,255,255,.15);color:rgba(255,255,255,.65);
+  border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.mpill.active{background:#fff;color:#1D4ED8}
 
 /* ── Layout ── */
-.wrap{max-width:480px;margin:0 auto;padding:16px 14px 40px}
-.section-label{
-  font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
-  color:#94A3B8;margin:22px 0 10px 2px
-}
+.wrap{max-width:480px;margin:0 auto;padding:16px 14px 48px}
+.slabel{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:#94A3B8;margin:22px 0 10px 2px}
 
-/* ── Summary grid ── */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.kpi{
-  background:#fff;border-radius:16px;padding:18px 16px;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05)
-}
+/* ── KPI grid ── */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:#fff;border-radius:16px;padding:18px 16px;
+  box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05)}
 .kpi-label{font-size:12px;font-weight:600;color:#64748B}
-.kpi-value{font-size:26px;font-weight:800;margin-top:6px;line-height:1;letter-spacing:-1px}
-.kpi-unit{font-size:14px;font-weight:500;color:#94A3B8;margin-left:1px}
+.kpi-row{display:flex;align-items:baseline;gap:2px;margin-top:6px}
+.kpi-num{font-size:26px;font-weight:800;line-height:1;letter-spacing:-1px}
+.kpi-unit{font-size:13px;font-weight:500;color:#94A3B8}
 .note{font-size:10px;font-weight:600;color:#F59E0B;background:#FEF3C7;
   padding:1px 5px;border-radius:4px;vertical-align:middle}
 
 /* ── Brand card ── */
-.card{
-  background:#fff;border-radius:18px;padding:18px;margin-top:10px;
-  box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05)
-}
-.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.card-name{font-size:17px;font-weight:800;letter-spacing:-0.3px}
-.brand-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:14px}
+.card{background:#fff;border-radius:18px;padding:18px;margin-top:10px;
+  box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05)}
+.card-name{font-size:17px;font-weight:800;letter-spacing:-.3px;margin-bottom:14px}
+.bgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
 .bm{text-align:center;padding:10px 4px;border-radius:10px;background:#F8FAFC}
-.bm-label{font-size:11px;color:#94A3B8;font-weight:600;margin-bottom:5px}
-.bm-value{font-size:16px;font-weight:800;letter-spacing:-0.5px}
+.bm-label{font-size:11px;color:#94A3B8;font-weight:600;margin-bottom:4px}
+.bm-row{display:flex;align-items:baseline;justify-content:center;gap:1px}
+.bm-num{font-size:16px;font-weight:800;letter-spacing:-.4px}
 .bm-unit{font-size:11px;font-weight:500;color:#94A3B8}
 
-/* ── Inventory inside card ── */
-.inv-section{border-top:1px solid #F1F5F9;padding-top:12px}
-.inv-row-inner{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
-.inv-row-inner:last-child{margin-bottom:0}
-.inv-label{font-size:11px;font-weight:600;color:#94A3B8;white-space:nowrap;min-width:54px}
-.inv-value{font-size:20px;font-weight:900;color:#4338CA;letter-spacing:-0.5px;line-height:1}
-.inv-unit{font-size:11px;color:#94A3B8;font-weight:500;margin-left:1px}
+/* ── Inventory section ── */
+.inv-inner{border-top:1px solid #F1F5F9;margin-top:14px;padding-top:14px}
+.inv-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.inv-row:last-child{margin-bottom:0}
+.inv-lbl{font-size:11px;font-weight:600;color:#94A3B8;min-width:52px;padding-top:3px}
+.inv-body{flex:1}
+.inv-main{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+.inv-num{font-size:20px;font-weight:900;color:#4338CA;letter-spacing:-.5px;line-height:1}
+.inv-unit{font-size:11px;color:#94A3B8;font-weight:500}
+.dep-badge{font-size:11px;font-weight:600;color:#fff;background:#6366F1;
+  padding:2px 7px;border-radius:10px;white-space:nowrap}
 
-/* ── RG chips ── */
-.rg-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-.rg-chip{
-  display:inline-flex;align-items:center;gap:4px;
-  background:#EEF2FF;border-radius:8px;padding:4px 8px;
-}
-.rg-size{font-size:10px;font-weight:600;color:#6366F1}
-.rg-qty{font-size:14px;font-weight:800;color:#4338CA}
-.rg-empty{font-size:13px;color:#CBD5E1}
+/* ── RG detail lines ── */
+.rg-line{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.rg-line:last-child{margin-bottom:0}
+.rg-size{font-size:11px;font-weight:600;color:#6366F1;min-width:38px}
+.rg-qty{font-size:15px;font-weight:800;color:#4338CA;letter-spacing:-.3px}
+.rg-qunit{font-size:11px;color:#94A3B8;font-weight:500}
+.rg-arrow{font-size:11px;color:#CBD5E1;margin:0 2px}
+.rg-dep{font-size:11px;font-weight:700;color:#fff;background:#10B981;
+  padding:2px 7px;border-radius:10px}
+.rg-dep.warn{background:#F59E0B}
+.rg-dep.danger{background:#EF4444}
+.empty-dash{color:#CBD5E1;font-size:13px}
 
 /* ── Footer ── */
 .footer{text-align:center;color:#CBD5E1;font-size:11px;padding-top:28px}
@@ -79,107 +88,213 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 </head>
 <body>
 
-<div class="header">
-  <div class="header-brand">어바웃알파</div>
-  <div class="header-month">2026년 05월 대시보드</div>
-  <div class="header-updated">업데이트 2026-05-29 18:05</div>
+<div class="hdr">
+  <div class="hdr-brand">어바웃알파</div>
+  <div id="hdr-month" class="hdr-month"></div>
+  <div class="hdr-updated">업데이트 2026-05-29 18:20</div>
+  <div class="mnav"><button class="mpill active" data-ym="2026-05월" onclick="sel(this)">5월</button><button class="mpill" data-ym="2026-04월" onclick="sel(this)">4월</button><button class="mpill" data-ym="2026-03월" onclick="sel(this)">3월</button><button class="mpill" data-ym="2026-02월" onclick="sel(this)">2월</button><button class="mpill" data-ym="2026-01월" onclick="sel(this)">1월</button><button class="mpill" data-ym="2025-12월" onclick="sel(this)">25/12월</button><button class="mpill" data-ym="2025-11월" onclick="sel(this)">25/11월</button><button class="mpill" data-ym="2025-10월" onclick="sel(this)">25/10월</button><button class="mpill" data-ym="2025-09월" onclick="sel(this)">25/9월</button><button class="mpill" data-ym="2025-08월" onclick="sel(this)">25/8월</button><button class="mpill" data-ym="2025-07월" onclick="sel(this)">25/7월</button><button class="mpill" data-ym="2025-06월" onclick="sel(this)">25/6월</button><button class="mpill" data-ym="2025-05월" onclick="sel(this)">25/5월</button><button class="mpill" data-ym="2025-04월" onclick="sel(this)">25/4월</button><button class="mpill" data-ym="2025-03월" onclick="sel(this)">25/3월</button><button class="mpill" data-ym="2025-02월" onclick="sel(this)">25/2월</button><button class="mpill" data-ym="2025-01월" onclick="sel(this)">25/1월</button><button class="mpill" data-ym="2024-12월" onclick="sel(this)">24/12월</button><button class="mpill" data-ym="2024-11월" onclick="sel(this)">24/11월</button><button class="mpill" data-ym="2024-10월" onclick="sel(this)">24/10월</button></div>
 </div>
 
 <div class="wrap">
 
-  <!-- 이달 실적 -->
-  <div class="section-label">이달 실적</div>
-  <div class="grid-2">
+  <div class="slabel">이달 실적</div>
+  <div class="grid2">
     <div class="kpi">
       <div class="kpi-label">총 매출</div>
-      <div class="kpi-value" style="color:#2563EB">13,376<span class="kpi-unit">만</span></div>
+      <div class="kpi-row"><span id="k-sale" class="kpi-num" style="color:#2563EB">-</span><span class="kpi-unit">만</span></div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">광고비 <span class='note'>미입력</span></div>
-      <div class="kpi-value" style="color:#D97706">0<span class="kpi-unit">만</span></div>
+      <div id="k-ad-label" class="kpi-label">광고비</div>
+      <div class="kpi-row"><span id="k-ad" class="kpi-num" style="color:#D97706">-</span><span class="kpi-unit">만</span></div>
     </div>
     <div class="kpi">
       <div class="kpi-label">순수익</div>
-      <div class="kpi-value" style="color:#10B981">1,131<span class="kpi-unit">만</span></div>
+      <div class="kpi-row"><span id="k-net" class="kpi-num">-</span><span class="kpi-unit">만</span></div>
     </div>
     <div class="kpi">
       <div class="kpi-label">마진율</div>
-      <div class="kpi-value" style="color:#7C3AED">8.5<span class="kpi-unit">%</span></div>
+      <div class="kpi-row"><span id="k-margin" class="kpi-num" style="color:#7C3AED">-</span><span class="kpi-unit">%</span></div>
     </div>
   </div>
 
-  <!-- 브랜드별 현황 -->
-  <div class="section-label">브랜드별 현황</div>
+  <div class="slabel">브랜드별 현황</div>
 
   <div class="card">
-    <div class="card-head">
-      <div class="card-name">블랙알파</div>
+    <div class="card-name">블랙알파</div>
+    <div class="bgrid">
+      <div class="bm"><div class="bm-label">매출</div>
+        <div class="bm-row"><span id="ba-sale" class="bm-num" style="color:#2563EB">-</span><span class="bm-unit">만</span></div></div>
+      <div class="bm"><div id="ba-ad-label" class="bm-label">광고비</div>
+        <div class="bm-row"><span id="ba-ad" class="bm-num" style="color:#D97706">-</span><span class="bm-unit">만</span></div></div>
+      <div class="bm"><div class="bm-label">순수익</div>
+        <div class="bm-row"><span id="ba-net" class="bm-num">-</span><span class="bm-unit">만</span></div></div>
     </div>
-    <div class="brand-grid">
-      <div class="bm">
-        <div class="bm-label">매출</div>
-        <div class="bm-value" style="color:#2563EB">3,904<span class="bm-unit">만</span></div>
-      </div>
-      <div class="bm">
-        <div class="bm-label">광고비 <span class='note'>미입력</span></div>
-        <div class="bm-value" style="color:#D97706">0<span class="bm-unit">만</span></div>
-      </div>
-      <div class="bm">
-        <div class="bm-label">순수익</div>
-        <div class="bm-value" style="color:#10B981">321<span class="bm-unit">만</span></div>
-      </div>
-    </div>
-    <div class="inv-section">
-      <div class="inv-row-inner">
-        <div class="inv-label">자사창고</div>
-        <div class="inv-value">5,724</div><div class="inv-unit">개</div>
-      </div>
-      <div class="inv-row-inner" style="align-items:flex-start">
-        <div class="inv-label">로켓창고</div>
-        <div>
-          <div style="font-size:20px;font-weight:900;color:#4338CA;letter-spacing:-0.5px;line-height:1;margin-bottom:6px">270<span style="font-size:11px;color:#94A3B8;font-weight:500;margin-left:1px">개</span></div>
-          <div class="rg-chips"><span class='rg-chip'><span class='rg-size'>2개팩</span><span class='rg-qty'>210</span></span><span class='rg-chip'><span class='rg-size'>3개팩</span><span class='rg-qty'>60</span></span></div>
+    <div id="ba-inv" class="inv-inner" style="display:none">
+      <div class="inv-row">
+        <div class="inv-lbl">자사창고</div>
+        <div class="inv-body">
+          <div class="inv-main">
+            <span id="ba-closing" class="inv-num">-</span><span class="inv-unit">개</span>
+            <span id="ba-own-dep" class="dep-badge" style="display:none"></span>
+          </div>
         </div>
+      </div>
+      <div class="inv-row">
+        <div class="inv-lbl">로켓창고</div>
+        <div id="ba-rg-detail" class="inv-body"></div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-head">
-      <div class="card-name">세라펙스</div>
+    <div class="card-name">세라펙스</div>
+    <div class="bgrid">
+      <div class="bm"><div class="bm-label">매출</div>
+        <div class="bm-row"><span id="sx-sale" class="bm-num" style="color:#2563EB">-</span><span class="bm-unit">만</span></div></div>
+      <div class="bm"><div id="sx-ad-label" class="bm-label">광고비</div>
+        <div class="bm-row"><span id="sx-ad" class="bm-num" style="color:#D97706">-</span><span class="bm-unit">만</span></div></div>
+      <div class="bm"><div class="bm-label">순수익</div>
+        <div class="bm-row"><span id="sx-net" class="bm-num">-</span><span class="bm-unit">만</span></div></div>
     </div>
-    <div class="brand-grid">
-      <div class="bm">
-        <div class="bm-label">매출</div>
-        <div class="bm-value" style="color:#2563EB">9,472<span class="bm-unit">만</span></div>
-      </div>
-      <div class="bm">
-        <div class="bm-label">광고비 <span class='note'>미입력</span></div>
-        <div class="bm-value" style="color:#D97706">0<span class="bm-unit">만</span></div>
-      </div>
-      <div class="bm">
-        <div class="bm-label">순수익</div>
-        <div class="bm-value" style="color:#10B981">810<span class="bm-unit">만</span></div>
-      </div>
-    </div>
-    <div class="inv-section">
-      <div class="inv-row-inner">
-        <div class="inv-label">자사창고</div>
-        <div class="inv-value">1,260</div><div class="inv-unit">개</div>
-      </div>
-      <div class="inv-row-inner" style="align-items:flex-start">
-        <div class="inv-label">로켓창고</div>
-        <div>
-          <div style="font-size:20px;font-weight:900;color:#4338CA;letter-spacing:-0.5px;line-height:1;margin-bottom:6px">1,108<span style="font-size:11px;color:#94A3B8;font-weight:500;margin-left:1px">개</span></div>
-          <div class="rg-chips"><span class='rg-chip'><span class='rg-size'>2개팩</span><span class='rg-qty'>737</span></span><span class='rg-chip'><span class='rg-size'>3개팩</span><span class='rg-qty'>371</span></span></div>
+    <div id="sx-inv" class="inv-inner" style="display:none">
+      <div class="inv-row">
+        <div class="inv-lbl">자사창고</div>
+        <div class="inv-body">
+          <div class="inv-main">
+            <span id="sx-closing" class="inv-num">-</span><span class="inv-unit">개</span>
+            <span id="sx-own-dep" class="dep-badge" style="display:none"></span>
+          </div>
         </div>
+      </div>
+      <div class="inv-row">
+        <div class="inv-lbl">로켓창고</div>
+        <div id="sx-rg-detail" class="inv-body"></div>
       </div>
     </div>
   </div>
 
-  <div class="footer">어바웃알파 · 2026-05-29 18:05</div>
+  <div class="footer">어바웃알파 · 2026-05-29 18:20</div>
 </div>
 
+<script>
+const DATA = {"months": ["2024-10월", "2024-11월", "2024-12월", "2025-01월", "2025-02월", "2025-03월", "2025-04월", "2025-05월", "2025-06월", "2025-07월", "2025-08월", "2025-09월", "2025-10월", "2025-11월", "2025-12월", "2026-01월", "2026-02월", "2026-03월", "2026-04월", "2026-05월"], "current_ym": "2026-05월", "data": {"2024-10월": {"total": {"sale": 1251200.0, "ad": 0.0, "net": 1031618.0, "margin": 82.5}, "blackalpha": {"sale": 1251200.0, "ad": 0.0, "net": 1031618.0, "margin": 82.5, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2024-11월": {"total": {"sale": 1358500.0, "ad": 0.0, "net": 1129916.0, "margin": 83.2}, "blackalpha": {"sale": 1358500.0, "ad": 0.0, "net": 1129916.0, "margin": 83.2, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2024-12월": {"total": {"sale": 2685400.0, "ad": 0.0, "net": 2238925.0, "margin": 83.4}, "blackalpha": {"sale": 2685400.0, "ad": 0.0, "net": 2238925.0, "margin": 83.4, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-01월": {"total": {"sale": 3465600.0, "ad": 0.0, "net": 2896573.0, "margin": 83.6}, "blackalpha": {"sale": 3465600.0, "ad": 0.0, "net": 2896573.0, "margin": 83.6, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-02월": {"total": {"sale": 6095600.0, "ad": 0.0, "net": 5114638.0, "margin": 83.9}, "blackalpha": {"sale": 6095600.0, "ad": 0.0, "net": 5114638.0, "margin": 83.9, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-03월": {"total": {"sale": 8001760.0, "ad": 0.0, "net": 6728353.0, "margin": 84.1}, "blackalpha": {"sale": 8001760.0, "ad": 0.0, "net": 6728353.0, "margin": 84.1, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-04월": {"total": {"sale": 4516400.0, "ad": 0.0, "net": 3793258.0, "margin": 84.0}, "blackalpha": {"sale": 4516400.0, "ad": 0.0, "net": 3793258.0, "margin": 84.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-05월": {"total": {"sale": 3213300.0, "ad": 0.0, "net": 2705269.0, "margin": 84.2}, "blackalpha": {"sale": 3213300.0, "ad": 0.0, "net": 2705269.0, "margin": 84.2, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-06월": {"total": {"sale": 2685500.0, "ad": 0.0, "net": 2253051.0, "margin": 83.9}, "blackalpha": {"sale": 2685500.0, "ad": 0.0, "net": 2253051.0, "margin": 83.9, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-07월": {"total": {"sale": 6411100.0, "ad": 0.0, "net": 5442469.0, "margin": 84.9}, "blackalpha": {"sale": 6411100.0, "ad": 0.0, "net": 5442469.0, "margin": 84.9, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-08월": {"total": {"sale": 9187000.0, "ad": 0.0, "net": 7771868.0, "margin": 84.6}, "blackalpha": {"sale": 9187000.0, "ad": 0.0, "net": 7771868.0, "margin": 84.6, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-09월": {"total": {"sale": 19226800.0, "ad": 0.0, "net": 16188305.0, "margin": 84.2}, "blackalpha": {"sale": 19226800.0, "ad": 0.0, "net": 16188305.0, "margin": 84.2, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 0.0, "ad": 0.0, "net": 0.0, "margin": 0.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-10월": {"total": {"sale": 22983100.0, "ad": 0.0, "net": 19144484.0, "margin": 83.3}, "blackalpha": {"sale": 22330300.0, "ad": 0.0, "net": 18607060.0, "margin": 83.3, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 652800.0, "ad": 0.0, "net": 537424.0, "margin": 82.3, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-11월": {"total": {"sale": 30968540.0, "ad": 0.0, "net": 25942333.0, "margin": 83.8}, "blackalpha": {"sale": 30193340.0, "ad": 0.0, "net": 25304142.0, "margin": 83.8, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 775200.0, "ad": 0.0, "net": 638191.0, "margin": 82.3, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2025-12월": {"total": {"sale": 26061080.0, "ad": 0.0, "net": 21746503.0, "margin": 83.4}, "blackalpha": {"sale": 20635800.0, "ad": 0.0, "net": 17250567.0, "margin": 83.6, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 5425280.0, "ad": 0.0, "net": 4495936.0, "margin": 82.9, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2026-01월": {"total": {"sale": 24753400.0, "ad": 0.0, "net": 20380764.0, "margin": 82.3}, "blackalpha": {"sale": 17571800.0, "ad": 0.0, "net": 14470183.0, "margin": 82.3, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 7181600.0, "ad": 0.0, "net": 5910581.0, "margin": 82.3, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2026-02월": {"total": {"sale": 32283800.0, "ad": 0.0, "net": 22895875.0, "margin": 70.9}, "blackalpha": {"sale": 25028000.0, "ad": 0.0, "net": 17764294.0, "margin": 71.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 7255800.0, "ad": 0.0, "net": 5131581.0, "margin": 70.7, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2026-03월": {"total": {"sale": 55290300.0, "ad": 0.0, "net": 39543450.0, "margin": 71.5}, "blackalpha": {"sale": 26279900.0, "ad": 0.0, "net": 18883132.0, "margin": 71.9, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 29010400.0, "ad": 0.0, "net": 20660318.0, "margin": 71.2, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2026-04월": {"total": {"sale": 110315000.0, "ad": 54956956.0, "net": -31001483.0, "margin": -28.1}, "blackalpha": {"sale": 39210800.0, "ad": 18403373.0, "net": -7506833.0, "margin": -19.1, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "", "3": "", "4": "", "7": ""}}}, "serapex": {"sale": 71104200.0, "ad": 36553583.0, "net": -23494650.0, "margin": -33.0, "inv": {"closing": 0, "own_depletion": "", "rg_stocks": {"1": 0, "2": 0, "3": 0}, "rg_depletions": {"1": "", "2": "", "3": ""}}}}, "2026-05월": {"total": {"sale": 133762200.0, "ad": 0.0, "net": 11312990.0, "margin": 8.5}, "blackalpha": {"sale": 39041800.0, "ad": 0.0, "net": 3210321.0, "margin": 8.2, "inv": {"closing": 5724, "own_depletion": "2026-12-07", "rg_stocks": {"1": 0, "2": 210, "3": 60, "4": 0, "7": 0}, "rg_depletions": {"1": "", "2": "2026-07-18", "3": "2026-06-09", "4": "", "7": ""}}}, "serapex": {"sale": 94720400.0, "ad": 0.0, "net": 8102669.0, "margin": 8.6, "inv": {"closing": 1260, "own_depletion": "2026-06-13", "rg_stocks": {"1": 0, "2": 737, "3": 371}, "rg_depletions": {"1": "", "2": "2026-07-04", "3": "2026-07-06"}}}}}, "ba_sizes": [1, 2, 3, 4, 7], "sx_sizes": [1, 2, 3], "updated": "2026-05-29 18:20"};
+
+function fmt(n) {
+  return Math.round(n / 10000).toLocaleString('ko-KR');
+}
+
+function colorFor(n) {
+  return n >= 0 ? '#10B981' : '#EF4444';
+}
+
+// "2026-06-28" → "6/28", 빈값 → null
+function parseDep(s) {
+  if (!s) return null;
+  const p = s.split('-');
+  if (p.length === 3) return { label: parseInt(p[1]) + '/' + parseInt(p[2]), date: new Date(s) };
+  return null;
+}
+
+// 소진까지 남은 일수 → 색상 (30일 이하=빨, 60일 이하=주황, 이상=초록)
+function depClass(dateObj) {
+  if (!dateObj) return '';
+  const days = Math.round((dateObj - new Date()) / 86400000);
+  if (days <= 30) return 'danger';
+  if (days <= 60) return 'warn';
+  return '';
+}
+
+function renderInv(prefix, inv, sizes) {
+  const closingEl = document.getElementById(prefix + '-closing');
+  const ownDepEl  = document.getElementById(prefix + '-own-dep');
+  const rgEl      = document.getElementById(prefix + '-rg-detail');
+
+  closingEl.textContent = inv.closing.toLocaleString('ko-KR');
+
+  const ownDep = parseDep(inv.own_depletion);
+  if (ownDep) {
+    ownDepEl.textContent = '→ ' + ownDep.label;
+    ownDepEl.className = 'dep-badge ' + depClass(ownDep.date);
+    ownDepEl.style.display = '';
+  } else {
+    ownDepEl.style.display = 'none';
+  }
+
+  let html = '';
+  let hasAny = false;
+  for (const s of sizes) {
+    const qty = inv.rg_stocks[String(s)] || 0;
+    if (!qty) continue;
+    hasAny = true;
+    const dep = parseDep(inv.rg_depletions[String(s)]);
+    const depHtml = dep
+      ? `<span class="rg-arrow">→</span><span class="rg-dep ${depClass(dep.date)}">${dep.label}</span>`
+      : '';
+    html += `<div class="rg-line">
+      <span class="rg-size">${s}개팩</span>
+      <span class="rg-qty">${qty.toLocaleString('ko-KR')}</span><span class="rg-qunit">개</span>
+      ${depHtml}
+    </div>`;
+  }
+  rgEl.innerHTML = hasAny ? html : '<span class="empty-dash">-</span>';
+}
+
+function renderMonth(ym) {
+  const d = DATA.data[ym];
+  if (!d) return;
+  const isCurrent = (ym === DATA.current_ym);
+
+  // 헤더 월 표시
+  const y = ym.slice(0,4), m = parseInt(ym.slice(5,7));
+  document.getElementById('hdr-month').textContent = y + '년 ' + m + '월 대시보드';
+
+  // 전체 KPI
+  document.getElementById('k-sale').textContent = fmt(d.total.sale);
+  document.getElementById('k-ad').textContent   = fmt(d.total.ad);
+  const kNet = document.getElementById('k-net');
+  kNet.textContent = fmt(d.total.net);
+  kNet.style.color = colorFor(d.total.net);
+  document.getElementById('k-margin').textContent = d.total.margin;
+  document.getElementById('k-ad-label').innerHTML = d.total.ad > 0 ? '광고비' : '광고비 <span class="note">미입력</span>';
+
+  // 브랜드별
+  for (const [b, p] of [['blackalpha','ba'],['serapex','sx']]) {
+    const bd = d[b];
+    document.getElementById(p+'-sale').textContent = fmt(bd.sale);
+    document.getElementById(p+'-ad').textContent   = fmt(bd.ad);
+    const bNet = document.getElementById(p+'-net');
+    bNet.textContent = fmt(bd.net);
+    bNet.style.color = colorFor(bd.net);
+    document.getElementById(p+'-ad-label').innerHTML = bd.ad > 0 ? '광고비' : '광고비 <span class="note">미입력</span>';
+
+    // 재고 (현재 월만)
+    const invEl = document.getElementById(p+'-inv');
+    if (isCurrent) {
+      invEl.style.display = '';
+      renderInv(p, bd.inv, b === 'blackalpha' ? DATA.ba_sizes : DATA.sx_sizes);
+    } else {
+      invEl.style.display = 'none';
+    }
+  }
+
+  // 활성 pill 업데이트
+  document.querySelectorAll('.mpill').forEach(el => {
+    el.classList.toggle('active', el.dataset.ym === ym);
+  });
+}
+
+function sel(el) { renderMonth(el.dataset.ym); }
+
+// 초기 렌더 (최신 월 또는 현재 월)
+const initYm = DATA.months.includes(DATA.current_ym)
+  ? DATA.current_ym
+  : DATA.months[DATA.months.length - 1];
+if (initYm) renderMonth(initYm);
+
+// 활성 pill 화면에 보이도록 스크롤
+const ap = document.querySelector('.mpill.active');
+if (ap) ap.scrollIntoView({block:'nearest', inline:'center'});
+</script>
 <script>
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 </script>
