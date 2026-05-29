@@ -75,9 +75,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 .footer{text-align:center;color:#CBD5E1;font-size:11px;padding-top:28px}
 </style>
 <link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="어바웃알파">
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
@@ -86,7 +84,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
 <div class="header">
   <div class="header-brand">어바웃알파</div>
   <div class="header-month">2026년 05월 대시보드</div>
-  <div class="header-updated">업데이트 2026-05-29 16:13</div>
+  <div class="header-updated">업데이트 2026-05-29 16:38</div>
 </div>
 
 <div class="wrap">
@@ -176,13 +174,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans
     </div>
   </div>
 
-  <div class="footer">어바웃알파 · 2026-05-29 16:13</div>
+  <div class="footer">어바웃알파 · 2026-05-29 16:38</div>
 </div>
 
 <script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js');
-}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>
