@@ -7,7 +7,10 @@
 (function () {
   // 엔드포인트 조회는 raw(즉시 반영 + CORS 허용). 스크립트 자체는 Pages에서 로드.
   var RESOLVER = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/beacon_endpoint.json';
-  var REVIEW_RE = /\/board\/review\//i;     // 후기 게시판 경로
+  // 후기(상품후기) 게시판 = 경로 /board/product/ + board_no=4 (board_no=6은 Q&A이므로 제외)
+  var REVIEW_RE = /\/board\/product\//i;
+  var REVIEW_BOARD = 'board_no=4';
+  function isReview() { return REVIEW_RE.test(location.pathname) && location.search.indexOf(REVIEW_BOARD) >= 0; }
   var BUF_KEY = 'aa_beacon_buf', EP_KEY = 'aa_ep', EP_TS = 'aa_ep_ts';
   var IDLE_MS = 30000;   // 30초 무활동이면 체류 일시정지
 
@@ -48,7 +51,7 @@
   flush();
 
   // 2) 후기 페이지 체류시간 측정
-  if (REVIEW_RE.test(location.pathname)) {
+  if (isReview()) {
     var activeMs = 0, lastTick = Date.now(), lastAct = Date.now(), visible = !document.hidden;
     function accrue() { var n = Date.now(); if (visible && (n - lastAct) < IDLE_MS) activeMs += n - lastTick; lastTick = n; }
     setInterval(accrue, 1000);
@@ -57,8 +60,8 @@
     });
     function report() {
       accrue();
-      send({ t: 'dwell', vid: vid, sid: sid, path: location.pathname, ent: enteredAt,
-             active_ms: Math.round(activeMs), total_ms: Date.now() - enteredAt, ts: Date.now() });
+      send({ t: 'dwell', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200),
+             ent: enteredAt, active_ms: Math.round(activeMs), total_ms: Date.now() - enteredAt, ts: Date.now() });
     }
     document.addEventListener('visibilitychange', function () {
       accrue();
