@@ -18,26 +18,28 @@
   var vid = ls('aa_vid'); if (!vid) { vid = uid(); ls('aa_vid', vid); }   // 방문자(브라우저) 식별
   var sid = ss('aa_sid'); if (!sid) { sid = uid(); ss('aa_sid', sid); }   // 세션 식별
 
-  function endpoint(cb) {
-    var ep = ls(EP_KEY), ts = +ls(EP_TS) || 0;
-    if (ep && Date.now() - ts < 3600000) { cb(ep); return; }              // 1시간 캐시
+  // 엔드포인트는 동기 변수로 보유(언로드 시 sendBeacon이 동기여야 안 샘). 백그라운드로 갱신.
+  var EP = ls(EP_KEY) || '';
+  (function resolve() {
+    var ts = +ls(EP_TS) || 0;
+    if (EP && Date.now() - ts < 3600000) return;                          // 1시간 캐시면 스킵
     fetch(RESOLVER, { cache: 'no-store' }).then(function (r) { return r.json(); })
-      .then(function (j) { if (j && j.url) { ls(EP_KEY, j.url); ls(EP_TS, Date.now()); cb(j.url); } else cb(ep); })
-      .catch(function () { cb(ep); });
-  }
+      .then(function (j) { if (j && j.url) { EP = j.url; ls(EP_KEY, j.url); ls(EP_TS, Date.now()); flush(); } })
+      .catch(function () {});
+  })();
   function buffer(p) { try { var b = JSON.parse(ls(BUF_KEY) || '[]'); b.push(p); if (b.length > 50) b = b.slice(-50); ls(BUF_KEY, JSON.stringify(b)); } catch (e) {} }
-  function post(ep, p) {
-    var body = JSON.stringify(p);
-    var ok = false;
-    // text/plain = CORS-safelisted → 프리플라이트(OPTIONS) 없이 단순요청. 서버가 JSON 파싱.
-    try { ok = navigator.sendBeacon(ep, new Blob([body], { type: 'text/plain;charset=UTF-8' })); } catch (e) {}
+  function send(p) {
+    // 항상 동기 전송(pagehide 안전). EP 미확보면 버퍼 → resolve 완료/다음 페이지에서 flush.
+    if (!EP) { buffer(p); return; }
+    var body = JSON.stringify(p), ok = false;
+    // text/plain = CORS-safelisted → 프리플라이트 없이 단순요청. 서버가 JSON 파싱.
+    try { ok = navigator.sendBeacon(EP, new Blob([body], { type: 'text/plain;charset=UTF-8' })); } catch (e) {}
     if (!ok) {
-      try { fetch(ep, { method: 'POST', body: body, headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, keepalive: true, mode: 'cors' }).catch(function () { buffer(p); }); }
+      try { fetch(EP, { method: 'POST', body: body, headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, keepalive: true, mode: 'cors' }).catch(function () { buffer(p); }); }
       catch (e) { buffer(p); }
     }
   }
-  function send(p) { endpoint(function (ep) { if (!ep) { buffer(p); return; } post(ep, p); }); }
-  function flush() { try { var b = JSON.parse(ls(BUF_KEY) || '[]'); if (!b.length) return; ls(BUF_KEY, '[]'); b.forEach(send); } catch (e) {} }
+  function flush() { try { var b = JSON.parse(ls(BUF_KEY) || '[]'); if (!b.length || !EP) return; ls(BUF_KEY, '[]'); b.forEach(send); } catch (e) {} }
 
   var enteredAt = Date.now();
 
