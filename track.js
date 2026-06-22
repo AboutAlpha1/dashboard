@@ -7,10 +7,12 @@
 (function () {
   // 엔드포인트 조회는 raw(즉시 반영 + CORS 허용). 스크립트 자체는 Pages에서 로드.
   var RESOLVER = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/beacon_endpoint.json';
-  // 후기(상품후기) 게시판 = 경로 /board/product/ + board_no=4 (board_no=6은 Q&A이므로 제외)
-  var REVIEW_RE = /\/board\/product\//i;
-  var REVIEW_BOARD = 'board_no=4';
-  function isReview() { return REVIEW_RE.test(location.pathname) && location.search.indexOf(REVIEW_BOARD) >= 0; }
+  // 후기는 상품 상세페이지 안의 알파리뷰 위젯 영역(.alpha_widget). 상품페이지에서만 추적.
+  var PRODUCT_RE = /\/product\//i;
+  function productNo() {
+    var m = location.search.match(/product_no=(\d+)/);
+    return m ? m[1] : ((location.pathname.match(/\/(\d+)\/?(?:$|[?#])/) || [])[1] || '');
+  }
   var BUF_KEY = 'aa_beacon_buf', EP_KEY = 'aa_ep', EP_TS = 'aa_ep_ts';
   var IDLE_MS = 30000;   // 30초 무활동이면 체류 일시정지
 
@@ -50,23 +52,57 @@
   send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), ts: enteredAt });
   flush();
 
-  // 2) 후기 페이지 체류시간 측정
-  if (isReview()) {
-    var activeMs = 0, lastTick = Date.now(), lastAct = Date.now(), visible = !document.hidden;
-    function accrue() { var n = Date.now(); if (visible && (n - lastAct) < IDLE_MS) activeMs += n - lastTick; lastTick = n; }
+  // 2) 상품페이지: 리뷰(알파리뷰) 영역 열람·체류 측정
+  if (PRODUCT_RE.test(location.pathname)) {
+    var dwellMs = 0, viewed = false, inView = false, tabVisible = !document.hidden;
+    var lastTick = Date.now(), lastAct = Date.now();
+    function accrue() {
+      var n = Date.now();
+      if (inView && tabVisible && (n - lastAct) < IDLE_MS) dwellMs += n - lastTick;
+      lastTick = n;
+    }
     setInterval(accrue, 1000);
     ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
       addEventListener(ev, function () { lastAct = Date.now(); }, { passive: true });
     });
+
+    // 알파리뷰 위젯은 비동기 로드 → 리뷰 리스트 컨테이너(가장 큰 .alpha_widget) 등장까지 폴링
+    function findReview() {
+      var el = document.getElementById('use_review');
+      if (el && el.offsetHeight > 80) return el;
+      var ws = [].slice.call(document.querySelectorAll('.alpha_widget, #prdReview'))
+                 .filter(function (e) { return e.offsetHeight > 150; });
+      if (!ws.length) return null;
+      ws.sort(function (a, b) { return b.offsetHeight - a.offsetHeight; });
+      return ws[0];   // 가장 큰 영역 = 리뷰 리스트
+    }
+    function observe(el) {
+      if (!('IntersectionObserver' in window)) {            // 폴백: 스크롤 판정
+        var ck = function () { var r = el.getBoundingClientRect(); inView = r.top < innerHeight * 0.85 && r.bottom > 0; if (inView) viewed = true; };
+        addEventListener('scroll', ck, { passive: true }); ck(); return;
+      }
+      new IntersectionObserver(function (es) {
+        accrue();
+        inView = es[0].isIntersecting && es[0].intersectionRatio > 0.2;
+        if (inView) viewed = true;
+        lastTick = Date.now();
+      }, { threshold: [0, 0.2, 0.5] }).observe(el);
+    }
+    var tries = 0, finder = setInterval(function () {
+      var el = findReview();
+      if (el) { clearInterval(finder); observe(el); }
+      else if (++tries > 40) clearInterval(finder);          // 최대 20초 대기
+    }, 500);
+
     function report() {
       accrue();
-      send({ t: 'dwell', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200),
-             ent: enteredAt, active_ms: Math.round(activeMs), total_ms: Date.now() - enteredAt, ts: Date.now() });
+      send({ t: 'rev', vid: vid, sid: sid, product: productNo(),
+             viewed: viewed ? 1 : 0, dwell_ms: Math.round(dwellMs), ts: Date.now() });
     }
     document.addEventListener('visibilitychange', function () {
       accrue();
-      if (document.hidden) { report(); visible = false; }
-      else { visible = true; lastTick = Date.now(); }
+      if (document.hidden) { tabVisible = false; report(); }
+      else { tabVisible = true; lastTick = Date.now(); }
     });
     addEventListener('pagehide', report);
   }
