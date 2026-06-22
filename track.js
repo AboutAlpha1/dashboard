@@ -34,6 +34,7 @@
   })();
   function buffer(p) { try { var b = JSON.parse(ls(BUF_KEY) || '[]'); b.push(p); if (b.length > 50) b = b.slice(-50); ls(BUF_KEY, JSON.stringify(b)); } catch (e) {} }
   function send(p) {
+    if (!p.site) p.site = location.hostname;   // 몰(도메인) 구분 태그 — 블랙알파/세라펙스 분리
     // 항상 동기 전송(pagehide 안전). EP 미확보면 버퍼 → resolve 완료/다음 페이지에서 flush.
     if (!EP) { buffer(p); return; }
     var body = JSON.stringify(p), ok = false;
