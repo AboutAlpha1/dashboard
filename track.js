@@ -106,4 +106,23 @@
     });
     addEventListener('pagehide', report);
   }
+
+  // 3) 모든 페이지: 페이지 체류시간(활동시간) — 구매자 여정 분석용
+  (function () {
+    var ms = 0, tick = Date.now(), act = Date.now(), vis = !document.hidden;
+    function accrue() { var n = Date.now(); if (vis && (n - act) < IDLE_MS) ms += n - tick; tick = n; }
+    setInterval(accrue, 1000);
+    ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
+      addEventListener(ev, function () { act = Date.now(); }, { passive: true });
+    });
+    function report() {
+      accrue();
+      send({ t: 'pg', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200),
+             ent: enteredAt, active_ms: Math.round(ms), ts: Date.now() });
+    }
+    document.addEventListener('visibilitychange', function () {
+      accrue(); if (document.hidden) { vis = false; report(); } else { vis = true; tick = Date.now(); }
+    });
+    addEventListener('pagehide', report);
+  })();
 })();
