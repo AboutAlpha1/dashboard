@@ -5,7 +5,8 @@
  * 개인정보 미수집: 랜덤 익명 id만 사용.
  */
 (function () {
-  var RESOLVER = 'https://aboutalpha1.github.io/dashboard/beacon_endpoint.json';
+  // 엔드포인트 조회는 raw(즉시 반영 + CORS 허용). 스크립트 자체는 Pages에서 로드.
+  var RESOLVER = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/beacon_endpoint.json';
   var REVIEW_RE = /\/board\/review\//i;     // 후기 게시판 경로
   var BUF_KEY = 'aa_beacon_buf', EP_KEY = 'aa_ep', EP_TS = 'aa_ep_ts';
   var IDLE_MS = 30000;   // 30초 무활동이면 체류 일시정지
