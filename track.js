@@ -161,6 +161,20 @@
     addEventListener('pagehide', sReport);
   }
 
+  // 2c) 상품페이지: 클릭 히트맵 (좌표 % + 클릭 요소)
+  if (PRODUCT_RE.test(location.pathname)) {
+    addEventListener('click', function (e) {
+      var dh = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
+      var t = e.target || {};
+      var cls = (typeof t.className === 'string' ? t.className : '').slice(0, 40);
+      var label = ((t.innerText || t.alt || t.value || '') + '').replace(/\s+/g, ' ').trim().slice(0, 40);
+      send({ t: 'click', vid: vid, sid: sid, product: productNo(), path: location.pathname,
+             x: Math.round((e.clientX / (innerWidth || 1)) * 1000) / 10,        // 뷰포트폭 대비 %
+             y: Math.round(((window.scrollY + e.clientY) / dh) * 1000) / 10,     // 전체 페이지높이 대비 %
+             tag: (t.tagName || '').toLowerCase(), cls: cls, label: label, ts: Date.now() });
+    }, { passive: true, capture: true });
+  }
+
   // 3) 모든 페이지: 페이지 체류시간(활동시간) — 구매자 여정 분석용
   (function () {
     var ms = 0, tick = Date.now(), act = Date.now(), vis = !document.hidden;
