@@ -8,7 +8,9 @@
   // 엔드포인트 조회는 raw(즉시 반영 + CORS 허용). 스크립트 자체는 Pages에서 로드.
   var RESOLVER = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/beacon_endpoint.json';
   // 후기는 상품 상세페이지 안의 알파리뷰 위젯 영역(.alpha_widget). 상품페이지에서만 추적.
-  var PRODUCT_RE = /\/product\//i;
+  // /surl/ = 카페24 단축URL(세라펙스 마케팅 유입이 대부분 /surl/P/24/ → 상품페이지 그대로 서빙).
+  // 위젯이 없으면 findReview가 20초 후 알아서 포기하므로 비상품 /surl/도 무해.
+  var PRODUCT_RE = /\/product\/|\/surl\//i;
   function productNo() {
     var m = location.search.match(/product_no=(\d+)/);
     return m ? m[1] : ((location.pathname.match(/\/(\d+)\/?(?:$|[?#])/) || [])[1] || '');
