@@ -125,6 +125,42 @@
     addEventListener('pagehide', report);
   }
 
+  // 2b) 상품페이지: 스크롤 깊이·구간별(0-25-50-75-100%) 체류·이탈 지점
+  if (PRODUCT_RE.test(location.pathname)) {
+    var segMs = [0, 0, 0, 0], maxPct = 0, curSeg = 0;
+    var sTick = Date.now(), sAct = Date.now(), sVis = !document.hidden;
+    function depthPct() {
+      var h = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
+      var seen = (window.scrollY || window.pageYOffset || 0) + innerHeight;
+      return Math.max(0, Math.min(100, Math.round(seen / h * 100)));
+    }
+    function segOf(p) { return p >= 75 ? 3 : p >= 50 ? 2 : p >= 25 ? 1 : 0; }
+    function sAccrue() {
+      var n = Date.now();
+      if (sVis && (n - sAct) < IDLE_MS) segMs[curSeg] += n - sTick;
+      sTick = n;
+    }
+    setInterval(sAccrue, 1000);
+    function onScroll() {
+      sAccrue();
+      var p = depthPct(); if (p > maxPct) maxPct = p; curSeg = segOf(p);
+    }
+    ['scroll', 'resize'].forEach(function (ev) { addEventListener(ev, onScroll, { passive: true }); });
+    ['mousemove', 'keydown', 'touchstart', 'click'].forEach(function (ev) {
+      addEventListener(ev, function () { sAct = Date.now(); }, { passive: true });
+    });
+    onScroll();
+    function sReport() {
+      sAccrue();
+      send({ t: 'scroll', vid: vid, sid: sid, product: productNo(), path: location.pathname,
+             max_pct: maxPct, seg_ms: segMs.map(Math.round), exit_seg: curSeg, ts: Date.now() });
+    }
+    document.addEventListener('visibilitychange', function () {
+      sAccrue(); if (document.hidden) { sVis = false; sReport(); } else { sVis = true; sTick = Date.now(); }
+    });
+    addEventListener('pagehide', sReport);
+  }
+
   // 3) 모든 페이지: 페이지 체류시간(활동시간) — 구매자 여정 분석용
   (function () {
     var ms = 0, tick = Date.now(), act = Date.now(), vis = !document.hidden;
