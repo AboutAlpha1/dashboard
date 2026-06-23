@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0F172A">
+<title>어바웃알파 대시보드 바로가기</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;
+  background:linear-gradient(160deg,#0F172A 0%,#1E3A5F 70%,#1D4ED8 100%);
+  color:#fff;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:24px;-webkit-font-smoothing:antialiased}
+.brand{font-size:11px;font-weight:700;letter-spacing:3px;opacity:.5;text-transform:uppercase;margin-bottom:6px}
+h1{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:28px}
+.wrap{width:100%;max-width:420px}
+a.card{display:flex;align-items:center;gap:14px;text-decoration:none;color:#0F172A;
+  background:#fff;border-radius:18px;padding:20px 22px;margin-bottom:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);transition:transform .12s,opacity .12s}
+a.card:active{transform:scale(.97)}
+a.card.off{opacity:.45;pointer-events:none}
+.ico{font-size:30px;line-height:1}
+.txt{flex:1}
+.t1{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.t2{font-size:12px;color:#64748B;margin-top:3px}
+.arr{font-size:20px;color:#94A3B8}
+.foot{margin-top:18px;font-size:11px;opacity:.45;text-align:center;line-height:1.6}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:r .7s linear infinite;vertical-align:-2px}
+@keyframes r{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+  <div class="brand">ABOUT ALPHA</div>
+  <h1>대시보드 바로가기</h1>
+  <div class="wrap">
+    <a class="card off" id="sales" href="#" target="_blank" rel="noopener">
+      <div class="ico">💰</div>
+      <div class="txt"><div class="t1">실시간 매출</div><div class="t2" id="sales2"><span class="spin"></span> 주소 조회중…</div></div>
+      <div class="arr">→</div>
+    </a>
+    <a class="card off" id="visitor" href="#" target="_blank" rel="noopener">
+      <div class="ico">📊</div>
+      <div class="txt"><div class="t1">방문자 분석</div><div class="t2" id="visitor2"><span class="spin"></span> 주소 조회중…</div></div>
+      <div class="arr">→</div>
+    </a>
+    <div class="foot" id="foot">
+      이 페이지 주소는 안 바뀝니다. 북마크하세요.<br>
+      (VPS 재부팅돼도 1분 내 자동으로 현재 주소를 가리킵니다)
+    </div>
+  </div>
+<script>
+// dash_endpoints.json은 VPS publisher가 1분마다 발행. raw로 즉시 반영 + no-cache.
+var SRC = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/dash_endpoints.json';
+function bind(key, url){
+  var a=document.getElementById(key), sub=document.getElementById(key+'2');
+  if(url){ a.href=url; a.classList.remove('off'); sub.textContent='열기 ›'; }
+  else { sub.textContent='주소 미발행(수집 대기)'; }
+}
+fetch(SRC,{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){
+  bind('sales', j.sales); bind('visitor', j.visitor);
+  if(j.updated){
+    var ago=Math.round(Date.now()/1000 - j.updated);
+    var t = ago<120 ? ago+'초 전' : Math.round(ago/60)+'분 전';
+    document.getElementById('foot').innerHTML =
+      '주소 갱신: '+t+' · 이 페이지는 북마크용 고정주소입니다';
+  }
+}).catch(function(){
+  ['sales','visitor'].forEach(function(k){document.getElementById(k+'2').textContent='조회 실패 · 새로고침';});
+});
+</script>
+</body>
+</html>
