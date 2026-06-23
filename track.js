@@ -55,57 +55,72 @@
   send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), ts: enteredAt });
   flush();
 
-  // 2) 상품페이지: 리뷰(알파리뷰) 영역 열람·체류 측정
+  // 2) 상품페이지: 리뷰영역 열람·체류 — 상단 별점요약(top)·하단 리뷰리스트(bottom) 각각 측정
   if (PRODUCT_RE.test(location.pathname)) {
-    var dwellMs = 0, viewed = false, inView = false, tabVisible = !document.hidden;
-    var lastTick = Date.now(), lastAct = Date.now();
-    function accrue() {
-      var n = Date.now();
-      if (inView && tabVisible && (n - lastAct) < IDLE_MS) dwellMs += n - lastTick;
-      lastTick = n;
-    }
-    setInterval(accrue, 1000);
+    var tabVisible = !document.hidden, lastAct = Date.now();
+    var zones = {};   // 'top'|'bottom' → {el, viewed, dwellMs, inView, lastTick}
     ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
       addEventListener(ev, function () { lastAct = Date.now(); }, { passive: true });
     });
-
-    // 알파리뷰 위젯은 비동기 로드 → 리뷰 리스트 컨테이너(가장 큰 .alpha_widget) 등장까지 폴링
-    function findReview() {
-      var el = document.getElementById('use_review');
-      if (el && el.offsetHeight > 80) return el;
-      var ws = [].slice.call(document.querySelectorAll('.alpha_widget, #prdReview'))
-                 .filter(function (e) { return e.offsetHeight > 150; });
-      if (!ws.length) return null;
-      ws.sort(function (a, b) { return b.offsetHeight - a.offsetHeight; });
-      return ws[0];   // 가장 큰 영역 = 리뷰 리스트
+    function accrue() {
+      var n = Date.now(), active = tabVisible && (n - lastAct) < IDLE_MS;
+      for (var k in zones) {
+        var z = zones[k];
+        if (z.inView && active) z.dwellMs += n - z.lastTick;
+        z.lastTick = n;
+      }
     }
-    function observe(el) {
+    setInterval(accrue, 1000);
+
+    function addZone(zone, el) {
+      if (zones[zone]) return;
+      var z = zones[zone] = { el: el, viewed: false, dwellMs: 0, inView: false, lastTick: Date.now() };
       if (!('IntersectionObserver' in window)) {            // 폴백: 스크롤 판정
-        var ck = function () { var r = el.getBoundingClientRect(); inView = r.top < innerHeight * 0.85 && r.bottom > 0; if (inView) viewed = true; };
+        var ck = function () {
+          var r = el.getBoundingClientRect();
+          z.inView = r.top < innerHeight * 0.85 && r.bottom > 0;
+          if (z.inView) z.viewed = true;
+        };
         addEventListener('scroll', ck, { passive: true }); ck(); return;
       }
       new IntersectionObserver(function (es) {
         accrue();
-        inView = es[0].isIntersecting && es[0].intersectionRatio > 0.2;
-        if (inView) viewed = true;
-        lastTick = Date.now();
+        z.inView = es[0].isIntersecting && es[0].intersectionRatio > 0.2;
+        if (z.inView) z.viewed = true;
+        z.lastTick = Date.now();
       }, { threshold: [0, 0.2, 0.5] }).observe(el);
     }
+
+    // 위젯은 비동기 로드 → 등장까지 폴링. 상단=상품정보 옆 별점요약, 하단=가장 큰 리뷰 리스트.
+    function scan() {
+      var top = document.querySelector('.info-review-summary');   // 상단 요약(가격/구매버튼 옆)
+      if (top && top.offsetHeight > 10) addZone('top', top);
+      var uses = document.getElementById('use_review');
+      var cands = [].slice.call(document.querySelectorAll('#prd-review, #prdReview, .alpha_widget'))
+                    .filter(function (e) { return e.offsetHeight > 150; });
+      if (uses && uses.offsetHeight > 150) cands.push(uses);
+      if (cands.length) {
+        cands.sort(function (a, b) { return b.offsetHeight - a.offsetHeight; });
+        addZone('bottom', cands[0]);                              // 가장 큰 영역 = 리뷰 리스트
+      }
+    }
     var tries = 0, finder = setInterval(function () {
-      var el = findReview();
-      if (el) { clearInterval(finder); observe(el); }
-      else if (++tries > 40) clearInterval(finder);          // 최대 20초 대기
+      scan();
+      if ((zones.top && zones.bottom) || ++tries > 40) clearInterval(finder);   // 최대 20초
     }, 500);
 
     function report() {
       accrue();
-      send({ t: 'rev', vid: vid, sid: sid, product: productNo(),
-             viewed: viewed ? 1 : 0, dwell_ms: Math.round(dwellMs), ts: Date.now() });
+      for (var k in zones) {
+        var z = zones[k];
+        send({ t: 'rev', vid: vid, sid: sid, product: productNo(), zone: k,
+               viewed: z.viewed ? 1 : 0, dwell_ms: Math.round(z.dwellMs), ts: Date.now() });
+      }
     }
     document.addEventListener('visibilitychange', function () {
       accrue();
       if (document.hidden) { tabVisible = false; report(); }
-      else { tabVisible = true; lastTick = Date.now(); }
+      else { tabVisible = true; for (var k in zones) zones[k].lastTick = Date.now(); }
     });
     addEventListener('pagehide', report);
   }
