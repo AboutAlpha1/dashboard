@@ -10,11 +10,19 @@
   // 후기는 상품 상세페이지 안의 알파리뷰 위젯 영역(.alpha_widget). 상품페이지에서만 추적.
   // /surl/ = 카페24 단축URL(세라펙스 마케팅 유입이 대부분 /surl/P/24/ → 상품페이지 그대로 서빙).
   // 위젯이 없으면 findReview가 20초 후 알아서 포기하므로 비상품 /surl/도 무해.
-  var PRODUCT_RE = /\/product\/|\/surl\//i;
+  // 상품 상세 식별: ①product_no 쿼리 ②단축URL /surl/P/<no>/ ③SEO URL /product/<이름>/<no>/...
+  // ⚠️ 카페24 SEO는 /product/<이름>/<상품번호>/category/<c>/display/<d>/ 형태 → 끝자리(display번호)를
+  //    뽑으면 1·2·4 같은 가짜 상품번호가 잡힌다. 반드시 이름 다음 첫 숫자(상품번호)를 뽑을 것.
   function productNo() {
     var m = location.search.match(/product_no=(\d+)/);
-    return m ? m[1] : ((location.pathname.match(/\/(\d+)\/?(?:$|[?#])/) || [])[1] || '');
+    if (m) return m[1];
+    m = location.pathname.match(/\/surl\/P\/(\d+)/i);
+    if (m) return m[1];
+    m = location.pathname.match(/\/product\/[^/]+\/(\d+)(?:\/|$)/);
+    if (m) return m[1];
+    return '';
   }
+  function isProductPage() { return productNo() !== ''; }   // 상세페이지에서만 추적
   var BUF_KEY = 'aa_beacon_buf', EP_KEY = 'aa_ep', EP_TS = 'aa_ep_ts';
   var IDLE_MS = 30000;   // 30초 무활동이면 체류 일시정지
 
@@ -56,7 +64,7 @@
   flush();
 
   // 2) 상품페이지: 리뷰영역 열람·체류 — 상단 별점요약(top)·하단 리뷰리스트(bottom) 각각 측정
-  if (PRODUCT_RE.test(location.pathname)) {
+  if (isProductPage()) {
     var tabVisible = !document.hidden, lastAct = Date.now();
     var zones = {};   // 'top'|'bottom' → {el, viewed, dwellMs, inView, lastTick}
     ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
@@ -126,7 +134,7 @@
   }
 
   // 2b) 상품페이지: 스크롤 깊이·구간별(4구간) 체류·이탈 + 세로 20밴드별 체류(체류·이탈 히트맵)
-  if (PRODUCT_RE.test(location.pathname)) {
+  if (isProductPage()) {
     var NB = 20;                                   // 페이지를 20개 세로밴드(각 5%)로
     var segMs = [0, 0, 0, 0], bandMs = [], maxPct = 0, curSeg = 0;
     for (var bi = 0; bi < NB; bi++) bandMs.push(0);
@@ -173,7 +181,7 @@
   }
 
   // 2c) 상품페이지: 클릭 히트맵 (좌표 % + 클릭 요소)
-  if (PRODUCT_RE.test(location.pathname)) {
+  if (isProductPage()) {
     addEventListener('click', function (e) {
       var dh = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
       var t = e.target || {};
