@@ -125,19 +125,29 @@
     addEventListener('pagehide', report);
   }
 
-  // 2b) 상품페이지: 스크롤 깊이·구간별(0-25-50-75-100%) 체류·이탈 지점
+  // 2b) 상품페이지: 스크롤 깊이·구간별(4구간) 체류·이탈 + 세로 20밴드별 체류(체류·이탈 히트맵)
   if (PRODUCT_RE.test(location.pathname)) {
-    var segMs = [0, 0, 0, 0], maxPct = 0, curSeg = 0;
+    var NB = 20;                                   // 페이지를 20개 세로밴드(각 5%)로
+    var segMs = [0, 0, 0, 0], bandMs = [], maxPct = 0, curSeg = 0;
+    for (var bi = 0; bi < NB; bi++) bandMs.push(0);
     var sTick = Date.now(), sAct = Date.now(), sVis = !document.hidden;
+    function pageH() { return document.documentElement.scrollHeight || document.body.scrollHeight || 1; }
     function depthPct() {
-      var h = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
       var seen = (window.scrollY || window.pageYOffset || 0) + innerHeight;
-      return Math.max(0, Math.min(100, Math.round(seen / h * 100)));
+      return Math.max(0, Math.min(100, Math.round(seen / pageH() * 100)));
     }
     function segOf(p) { return p >= 75 ? 3 : p >= 50 ? 2 : p >= 25 ? 1 : 0; }
     function sAccrue() {
-      var n = Date.now();
-      if (sVis && (n - sAct) < IDLE_MS) segMs[curSeg] += n - sTick;
+      var n = Date.now(), dt = n - sTick;
+      if (sVis && (n - sAct) < IDLE_MS && dt > 0) {
+        segMs[curSeg] += dt;
+        // 현재 뷰포트가 덮는 모든 밴드에 체류시간 가산(=화면에 보인 시간)
+        var h = pageH(), top = (window.scrollY || window.pageYOffset || 0);
+        var p0 = Math.max(0, Math.min(100, top / h * 100));
+        var p1 = Math.max(0, Math.min(100, (top + innerHeight) / h * 100));
+        var i0 = Math.floor(p0 / (100 / NB)), i1 = Math.floor((p1 - 0.0001) / (100 / NB));
+        for (var i = i0; i <= i1; i++) if (i >= 0 && i < NB) bandMs[i] += dt;
+      }
       sTick = n;
     }
     setInterval(sAccrue, 1000);
@@ -153,7 +163,8 @@
     function sReport() {
       sAccrue();
       send({ t: 'scroll', vid: vid, sid: sid, product: productNo(), path: location.pathname,
-             max_pct: maxPct, seg_ms: segMs.map(Math.round), exit_seg: curSeg, ts: Date.now() });
+             max_pct: maxPct, seg_ms: segMs.map(Math.round), exit_seg: curSeg,
+             band_ms: bandMs.map(Math.round), nb: NB, ts: Date.now() });
     }
     document.addEventListener('visibilitychange', function () {
       sAccrue(); if (document.hidden) { sVis = false; sReport(); } else { sVis = true; sTick = Date.now(); }
