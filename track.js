@@ -5,6 +5,9 @@
  * 개인정보 미수집: 랜덤 익명 id만 사용.
  */
 (function () {
+  // 중복 로드 가드: 스킨 삽입 + ScriptTags API 주입이 겹쳐도 1회만 동작 (2026-07-02)
+  if (window.__aa_track_loaded) return;
+  window.__aa_track_loaded = true;
   // 엔드포인트 조회는 raw(즉시 반영 + CORS 허용). 스크립트 자체는 Pages에서 로드.
   var RESOLVER = 'https://raw.githubusercontent.com/AboutAlpha1/dashboard/main/beacon_endpoint.json';
   // 후기는 상품 상세페이지 안의 알파리뷰 위젯 영역(.alpha_widget). 상품페이지에서만 추적.
