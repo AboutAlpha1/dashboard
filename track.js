@@ -212,4 +212,20 @@
     });
     addEventListener('pagehide', report);
   })();
+
+  // 4) 모든 페이지: 로딩속도(Navigation Timing, DOMContentLoaded ms) — 로딩↔이탈 상관 분석용
+  (function () {
+    function rep() {
+      try {
+        var ms = 0, nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]);
+        if (nav && nav.domContentLoadedEventEnd) ms = Math.round(nav.domContentLoadedEventEnd);
+        else if (performance.timing && performance.timing.domContentLoadedEventEnd) {
+          ms = performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+        }
+        if (ms > 0 && ms < 120000) send({ t: 'perf', vid: vid, sid: sid, path: location.pathname, ms: ms, ts: Date.now() });
+      } catch (e) {}
+    }
+    if (document.readyState === 'complete') setTimeout(rep, 0);
+    else addEventListener('load', function () { setTimeout(rep, 800); });
+  })();
 })();
