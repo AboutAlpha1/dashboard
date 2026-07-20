@@ -62,8 +62,18 @@
 
   var enteredAt = Date.now();
 
+  // 로그인 회원ID(있으면) — 검색어별 실결제 조인용. footer의 window.__hnp_mid='{$member_id}' 우선.
+  function memberId() {
+    try {
+      if (window.__hnp_mid) return String(window.__hnp_mid).slice(0, 60);
+      var C = window.CAFE24 || {}, m = C.FRONT_JS_CONFIG_MEMBER || {};
+      if (m && m.member_id) return String(m.member_id).slice(0, 60);
+      return '';
+    } catch (e) { return ''; }
+  }
+
   // 1) 페이지뷰 (모든 페이지)
-  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), ts: enteredAt });
+  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), mid: memberId(), ts: enteredAt });
   flush();
 
   // 2) 상품페이지: 리뷰영역 열람·체류 — 상단 별점요약(top)·하단 리뷰리스트(bottom) 각각 측정
