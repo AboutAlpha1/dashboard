@@ -79,6 +79,23 @@
   send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), mid: memberId(), ts: enteredAt });
   flush();
 
+  // HNP_ORDERTAG_0721: 주문서 추가항목(oa_content, 라벨 hnp)에 vid 심기 → 간편결제 주문↔검색어 조인
+  function fillOrderTag() {
+    try {
+      var ins = document.querySelectorAll('input[name^="oa_content"], textarea[name^="oa_content"]');
+      for (var i = 0; i < ins.length; i++) {
+        var e = ins[i], box = e.closest('tr, li, dl, div, p'), lbl = box ? (box.textContent || '') : '';
+        if (ins.length === 1 || /hnp/i.test(lbl)) {
+          e.value = vid;
+          if (box) { box.style.display = 'none'; } else { e.style.display = 'none'; }
+        }
+      }
+    } catch (e) {}
+  }
+  fillOrderTag();
+  setTimeout(fillOrderTag, 700);
+  setTimeout(fillOrderTag, 2000);
+
   // 2) 상품페이지: 리뷰영역 열람·체류 — 상단 별점요약(top)·하단 리뷰리스트(bottom) 각각 측정
   if (isProductPage()) {
     var tabVisible = !document.hidden, lastAct = Date.now();
