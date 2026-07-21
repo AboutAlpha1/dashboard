@@ -65,7 +65,10 @@
   // 로그인 회원ID(있으면) — 검색어별 실결제 조인용. footer의 window.__hnp_mid='{$member_id}' 우선.
   function memberId() {
     try {
-      if (window.__hnp_mid) return String(window.__hnp_mid).slice(0, 60);
+      var hv = window.__hnp_mid;
+      if (hv && String(hv).indexOf('{') < 0) return String(hv).slice(0, 60);
+      var mc = document.cookie.match(/login_provider_\d+=([^;]+)/);
+      if (mc) { try { var mo = JSON.parse(decodeURIComponent(mc[1])); if (mo && mo.member_id) return String(mo.member_id).slice(0, 60); } catch (e2) {} }
       var C = window.CAFE24 || {}, m = C.FRONT_JS_CONFIG_MEMBER || {};
       if (m && m.member_id) return String(m.member_id).slice(0, 60);
       return '';
