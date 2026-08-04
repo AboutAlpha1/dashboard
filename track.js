@@ -76,7 +76,7 @@
   }
 
   // 1) 페이지뷰 (모든 페이지)
-  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200), ref: (document.referrer || '').slice(0, 200), mid: memberId(), ts: enteredAt });
+  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 1000), ref: (document.referrer || '').slice(0, 200), mid: memberId(), ts: enteredAt });
   flush();
 
   // HNP_ORDERTAG_0721: 주문서 추가항목(oa_content, 라벨 hnp)에 vid 심기 → 간편결제 주문↔검색어 조인
@@ -237,7 +237,7 @@
     });
     function report() {
       accrue();
-      send({ t: 'pg', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 200),
+      send({ t: 'pg', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 1000),
              ent: enteredAt, active_ms: Math.round(ms), ts: Date.now() });
     }
     document.addEventListener('visibilitychange', function () {
