@@ -76,7 +76,9 @@
   }
 
   // 1) 페이지뷰 (모든 페이지)
-  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 1000), ref: (document.referrer || '').slice(0, 200), mid: memberId(), ts: enteredAt });
+  // ★2026-08-18 HNP_NOCUT_0818: ref 200자 한계에서 5,808건이 잘려 저장됐다(꼬리표 한가운데서 끊김).
+  //   잘린 데이터는 되돌릴 수 없다 → 넉넉히. q 는 2026-08 에 이미 1000 으로 풀었다.
+  send({ t: 'pv', vid: vid, sid: sid, path: location.pathname, q: location.search.slice(0, 1000), ref: (document.referrer || '').slice(0, 2000), mid: memberId(), ts: enteredAt });
   flush();
 
   // HNP_ORDERTAG_0721: 주문서 추가항목(oa_content, 라벨 hnp)에 vid 심기 → 간편결제 주문↔검색어 조인
@@ -213,19 +215,50 @@
     addEventListener('pagehide', sReport);
   }
 
-  // 2c) 상품페이지: 클릭 히트맵 (좌표 % + 클릭 요소)
-  if (isProductPage()) {
-    addEventListener('click', function (e) {
+  // 2c) 클릭 수집 — 상품페이지는 전체(히트맵용), 그 외 페이지는 담기/구매 버튼만.
+  //
+  // ★2026-08-18 HNP_CLICKFIX_0818 — 세 가지를 한꺼번에 고친다(전부 실측으로 확인한 결함).
+  //  ① **비상품 페이지 클릭이 통째로 안 왔다**: 종전엔 `if (isProductPage())` 안에 있어서
+  //     목록·카테고리·기획전에서 담는 클릭이 전송조차 안 됐다. (장바구니 페이지에 도달한
+  //     233세션 중 52세션은 '클릭 기록 자체가 없음' — 그 원인이 이것이다.)
+  //     ※같은 수정이 2026-08-06 에 서버 파일에는 들어갔으나 **배포되지 않은 채 남아 있었다.**
+  //  ② **버튼 이름이 안 잡혔다**: `e.target` 은 '손가락이 닿은 조각'이다. 카페24 버튼은
+  //     `<a><img></a>`·`<button><span>` 구조가 많아 아이콘을 누르면 이름이 빈칸이 되고,
+  //     헤더 장바구니의 개수 뱃지를 누르면 이름이 「1」로 잡혔다(실측 18세션).
+  //     → **closest 로 진짜 버튼까지 올라가서** 읽고, `id` 를 함께 남긴다.
+  //       (담기 버튼 실측 = `<button id="actionCart">장바구니</button>` — id 가 가장 확실한 신분증)
+  //  ③ **이름이 40자에서 잘렸다**(11,869건) → 200자.
+  var CART_RE = /장바구니|바로구매|구매하기|간편구매|결제하기|주문하기|cart|buy|checkout|order|basket/i;
+  function btnOf(t) {
+    try {
+      var el = (t && t.nodeType === 3) ? t.parentElement : t;   // 글자 노드면 부모 요소부터
+      if (!el || !el.closest) return el || t;
+      return el.closest('a,button,input,[role=button],[onclick]') || el;
+    } catch (e) { return t; }
+  }
+  function txtOf(b) {
+    if (!b) return '';
+    var s = b.innerText || b.alt || b.value || b.title ||
+            (b.getAttribute && (b.getAttribute('aria-label') || b.getAttribute('name'))) || '';
+    return (s + '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  }
+  addEventListener('click', function (e) {
+    try {
       var dh = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
-      var t = e.target || {};
-      var cls = (typeof t.className === 'string' ? t.className : '').slice(0, 40);
-      var label = ((t.innerText || t.alt || t.value || '') + '').replace(/\s+/g, ' ').trim().slice(0, 40);
+      var t = e.target || {}, b = btnOf(t);
+      var cls = (typeof b.className === 'string' ? b.className : '').slice(0, 120);
+      var eid = ((b && b.id) || '').slice(0, 80);
+      var label = txtOf(b);
+      var onProduct = isProductPage();
+      // 비상품 페이지는 담기/구매 성격만 보낸다(전 페이지 전체를 보내면 양이 폭증).
+      if (!onProduct && !(CART_RE.test(label) || CART_RE.test(cls) || CART_RE.test(eid))) return;
       send({ t: 'click', vid: vid, sid: sid, product: productNo(), path: location.pathname,
              x: Math.round((e.clientX / (innerWidth || 1)) * 1000) / 10,        // 뷰포트폭 대비 %
              y: Math.round(((window.scrollY + e.clientY) / dh) * 1000) / 10,     // 전체 페이지높이 대비 %
-             tag: (t.tagName || '').toLowerCase(), cls: cls, label: label, ts: Date.now() });
-    }, { passive: true, capture: true });
-  }
+             tag: (b.tagName || '').toLowerCase(), cls: cls, el_id: eid,
+             label: label, ts: Date.now() });
+    } catch (err) { /* 수집 실패가 손님 화면을 죽이면 안 된다 */ }
+  }, { passive: true, capture: true });
 
   // 3) 모든 페이지: 페이지 체류시간(활동시간) — 구매자 여정 분석용
   (function () {
