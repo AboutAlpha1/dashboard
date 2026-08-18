@@ -260,6 +260,55 @@
     } catch (err) { /* 수집 실패가 손님 화면을 죽이면 안 된다 */ }
   }, { passive: true, capture: true });
 
+  // 2d) 담기 성공/실패 — HNP_EVENTS_0818
+  //
+  // ★왜 필요한가: 담기는 **페이지가 안 바뀐다**(팝업만 뜬다). 그래서 종전엔 '장바구니 페이지를
+  //   봤나'로만 셌고 카페24 정답지의 22%밖에 못 봤다. 클릭으로 보정해도 49%였고,
+  //   그 클릭에는 **옵션 안 고르고 눌러 실패한 것**이 섞여 있었다.
+  // ★실측으로 확정한 신호(2026-08-18, 세라펙스 상품페이지에서 직접 눌러 확인):
+  //     성공 → POST /exec/front/order/basket/ (200) 발생 + 장바구니 개수 뱃지 0→1, 이동 없음
+  //     실패 → alert("필수 옵션을 선택해주세요") 만 뜨고 **통신 자체가 없음**
+  // ★XHR 을 가로채지 않는다 — 카페24·알파리뷰·메타픽셀과 충돌 위험. 표준 관찰자만 쓴다.
+  (function () {
+    function evt(kind, ok, detail) {
+      try {
+        send({ t: kind, vid: vid, sid: sid, ok: ok, detail: String(detail || '').slice(0, 200),
+               product: productNo(), path: location.pathname, ts: Date.now() });
+      } catch (e) {}
+    }
+    // ① 성공: 담기 요청이 실제로 나갔는지 (PerformanceObserver = 남의 코드를 안 건드림)
+    try {
+      var seen = 0;
+      new PerformanceObserver(function (list) {
+        list.getEntries().forEach(function (e) {
+          var u = e.name || '';
+          // /exec/front/order/basket/ 가 진짜 담기. Basketduplicate(중복확인)는 제외된다.
+          if (/\/exec\/front\/order\/basket\//i.test(u) || /\/product\/add_basket/i.test(u)) {
+            if (Date.now() - seen < 1500) return;      // 한 번 담을 때 여러 요청이 이어진다
+            seen = Date.now();
+            evt('cart', 1, u.slice(0, 200));
+          }
+        });
+      }).observe({ entryTypes: ['resource'] });
+    } catch (e) {}
+    // ② 실패·안내: 경고창 문구를 남긴다(원본 동작은 그대로 호출한다)
+    try {
+      ['alert', 'confirm'].forEach(function (fn) {
+        var orig = window[fn];
+        if (typeof orig !== 'function' || orig.__hnp) return;
+        var wrapped = function (m) {
+          try {
+            var s = String(m == null ? '' : m);
+            evt('dialog', /옵션|선택|초과|품절|재고|오류|실패/.test(s) ? 0 : null, s);
+          } catch (e) {}
+          return orig.apply(window, arguments);      // ★원래 동작은 절대 바꾸지 않는다
+        };
+        wrapped.__hnp = 1;                            // 두 번 감싸지 않게
+        window[fn] = wrapped;
+      });
+    } catch (e) {}
+  })();
+
   // 3) 모든 페이지: 페이지 체류시간(활동시간) — 구매자 여정 분석용
   (function () {
     var ms = 0, tick = Date.now(), act = Date.now(), vis = !document.hidden;
