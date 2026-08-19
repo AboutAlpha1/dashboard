@@ -60,6 +60,15 @@
   }
   function flush() { try { var b = JSON.parse(ls(BUF_KEY) || '[]'); if (!b.length || !EP) return; ls(BUF_KEY, '[]'); b.forEach(send); } catch (e) {} }
 
+  // 행동 기록 공용 전송구 — 서버 `events` 표에 kind 로 쌓인다(표를 또 만들지 않는다).
+  // ★2026-08-19 HNP_ALLREC_0819: 종전엔 담기(2d) 안에만 있던 것을 밖으로 뺐다. 종류가 늘어서.
+  function evt(kind, ok, detail) {
+    try {
+      send({ t: kind, vid: vid, sid: sid, ok: ok, detail: String(detail == null ? '' : detail).slice(0, 200),
+             product: productNo(), path: location.pathname, ts: Date.now() });
+    } catch (e) {}
+  }
+
   var enteredAt = Date.now();
 
   // 로그인 회원ID(있으면) — 검색어별 실결제 조인용. footer의 window.__hnp_mid='{$member_id}' 우선.
@@ -228,7 +237,8 @@
   //     → **closest 로 진짜 버튼까지 올라가서** 읽고, `id` 를 함께 남긴다.
   //       (담기 버튼 실측 = `<button id="actionCart">장바구니</button>` — id 가 가장 확실한 신분증)
   //  ③ **이름이 40자에서 잘렸다**(11,869건) → 200자.
-  var CART_RE = /장바구니|바로구매|구매하기|간편구매|결제하기|주문하기|cart|buy|checkout|order|basket/i;
+  // ※CART_RE(담기 버튼 판별)는 2026-08-19 전 페이지 수집으로 바뀌면서 필요 없어져 지웠다.
+  //   담기 판별은 서버 `beacon.py` 의 CART_CLICK 하나로 한다(판별 규칙이 두 곳이면 또 어긋난다).
   function btnOf(t) {
     try {
       var el = (t && t.nodeType === 3) ? t.parentElement : t;   // 글자 노드면 부모 요소부터
@@ -242,20 +252,30 @@
             (b.getAttribute && (b.getAttribute('aria-label') || b.getAttribute('name'))) || '';
     return (s + '').replace(/\s+/g, ' ').trim().slice(0, 200);
   }
+  //
+  // ★2026-08-19 HNP_ALLREC_0819 — **전 페이지 클릭을 다 받는다**(사장님 지시: 들어온 순간부터 기록).
+  //   종전엔 상품페이지 밖에서는 담기/구매 성격만 보냈다 → 목록·검색·장바구니·주문서에서
+  //   손님이 뭘 눌렀는지가 통째로 비어 있었다. 대신 두 가지로 양을 억제한다:
+  //     ① 같은 자리 연타(500ms 내 같은 버튼)는 1건으로 접는다
+  //     ② 한 페이지 400건 상한 (정상 손님은 수십 건. 폭주는 봇이거나 버그다)
+  //   `href` 를 함께 남긴다 → 목록에서 어느 상품으로 갔는지·외부로 나갔는지가 보인다.
+  var lastSig = '', lastSigTs = 0, clickN = 0;
   addEventListener('click', function (e) {
     try {
+      if (++clickN > 400) return;
       var dh = document.documentElement.scrollHeight || document.body.scrollHeight || 1;
       var t = e.target || {}, b = btnOf(t);
       var cls = (typeof b.className === 'string' ? b.className : '').slice(0, 120);
       var eid = ((b && b.id) || '').slice(0, 80);
       var label = txtOf(b);
-      var onProduct = isProductPage();
-      // 비상품 페이지는 담기/구매 성격만 보낸다(전 페이지 전체를 보내면 양이 폭증).
-      if (!onProduct && !(CART_RE.test(label) || CART_RE.test(cls) || CART_RE.test(eid))) return;
+      var sig = eid + '|' + label + '|' + (b.tagName || '');
+      if (sig === lastSig && Date.now() - lastSigTs < 500) return;
+      lastSig = sig; lastSigTs = Date.now();
       send({ t: 'click', vid: vid, sid: sid, product: productNo(), path: location.pathname,
              x: Math.round((e.clientX / (innerWidth || 1)) * 1000) / 10,        // 뷰포트폭 대비 %
              y: Math.round(((window.scrollY + e.clientY) / dh) * 1000) / 10,     // 전체 페이지높이 대비 %
              tag: (b.tagName || '').toLowerCase(), cls: cls, el_id: eid,
+             href: ((b && b.getAttribute && b.getAttribute('href')) || '').slice(0, 300),
              label: label, ts: Date.now() });
     } catch (err) { /* 수집 실패가 손님 화면을 죽이면 안 된다 */ }
   }, { passive: true, capture: true });
@@ -270,12 +290,6 @@
   //     실패 → alert("필수 옵션을 선택해주세요") 만 뜨고 **통신 자체가 없음**
   // ★XHR 을 가로채지 않는다 — 카페24·알파리뷰·메타픽셀과 충돌 위험. 표준 관찰자만 쓴다.
   (function () {
-    function evt(kind, ok, detail) {
-      try {
-        send({ t: kind, vid: vid, sid: sid, ok: ok, detail: String(detail || '').slice(0, 200),
-               product: productNo(), path: location.pathname, ts: Date.now() });
-      } catch (e) {}
-    }
     // ① 성공: 담기 요청이 실제로 나갔는지 (PerformanceObserver = 남의 코드를 안 건드림)
     try {
       var seen = 0;
@@ -306,6 +320,116 @@
         wrapped.__hnp = 1;                            // 두 번 감싸지 않게
         window[fn] = wrapped;
       });
+    } catch (e) {}
+  })();
+
+  // 2e) 전방위 기록 — HNP_ALLREC_0819 (사장님 지시: 들어온 순간부터 웬만하면 다 남긴다)
+  //
+  // ★설계 원칙 세 가지 — 어긴 적이 있어서 적어 둔다.
+  //   ① **남의 코드를 건드리지 않는다.** XHR·fetch 가로채기 금지(카페24·알파리뷰·메타픽셀과 충돌).
+  //      표준 관찰자(IntersectionObserver·PerformanceObserver)와 이벤트 청취만 쓴다.
+  //   ② **손님 화면을 절대 막지 않는다.** 전부 try 안, 전송은 sendBeacon(비동기).
+  //      값은 페이지를 떠날 때 한 번에 모아 보낸다(노출 60개를 60번 보내지 않는다).
+  //   ③ **입력값은 기록하지 않는다.** 이름·전화·주소·카드번호가 들어오는 칸이다.
+  //      고른 항목(옵션·수량 같은 선택지)만 남기고, 손으로 친 글자는 사이트내 검색어만 남긴다.
+  (function () {
+    // ── 기기·진입 유형: 세션당 1회만 (같은 손님이 10페이지 봐도 1건)
+    try {
+      if (!ss('aa_env')) {
+        ss('aa_env', '1');
+        var nv = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+        evt('env', null, [
+          (/Mobi|Android|iPhone/i.test(navigator.userAgent) ? '모바일' : 'PC'),
+          (screen.width || 0) + 'x' + (screen.height || 0),
+          'win' + (innerWidth || 0),
+          nv.type || '',                                   // navigate / reload / back_forward
+          (navigator.language || '')
+        ].join(' | '));
+      }
+    } catch (e) {}
+
+    // ── 상품 노출: 목록·메인·검색에서 **실제로 눈에 들어온** 상품. 스크롤로 지나친 것도 포함.
+    //    상품 상세는 pv 로 이미 알 수 있으므로 제외. 떠날 때 한 번에 보낸다.
+    try {
+      if (!isProductPage() && 'IntersectionObserver' in window) {
+        var seenP = {}, seenN = 0;
+        var io = new IntersectionObserver(function (es) {
+          es.forEach(function (x) {
+            if (!x.isIntersecting || seenN >= 60) return;
+            var h = x.target.getAttribute('href') || '';
+            var m = h.match(/product_no=(\d+)/) || h.match(/\/product\/[^/]+\/(\d+)(?:\/|$)/)
+                    || h.match(/\/surl\/P\/(\d+)/i);
+            if (m && !seenP[m[1]]) { seenP[m[1]] = 1; seenN++; }
+            io.unobserve(x.target);
+          });
+        }, { threshold: 0.5 });
+        var wire = function () {
+          var as = document.querySelectorAll('a[href*="product_no="], a[href*="/product/"]');
+          for (var i = 0; i < as.length && i < 300; i++) { try { io.observe(as[i]); } catch (e) {} }
+        };
+        wire(); setTimeout(wire, 1500); setTimeout(wire, 4000);   // 목록은 늦게 그려지기도 한다
+        addEventListener('pagehide', function () {
+          var ks = Object.keys(seenP);
+          if (ks.length) evt('view', null, ks.join(','));         // 상품번호 CSV
+        });
+      }
+    } catch (e) {}
+
+    // ── 옵션·수량 고르기: **고른 항목 이름만**. 손으로 친 칸(input type=text 등)은 건드리지 않는다.
+    try {
+      addEventListener('change', function (e) {
+        try {
+          var el = e.target; if (!el || !el.tagName) return;
+          var tg = el.tagName.toLowerCase(), ty = (el.type || '').toLowerCase();
+          var okType = (tg === 'select') || ty === 'radio' || ty === 'checkbox' ||
+                       (ty === 'number' && /qty|quantity|수량/i.test((el.name || '') + (el.id || '')));
+          if (!okType) return;                                    // ★입력값은 안 본다
+          var val = tg === 'select'
+            ? ((el.options[el.selectedIndex] || {}).text || '')    // 고른 옵션의 **표시 글자**
+            : (ty === 'number' ? el.value : (el.checked ? 'on' : 'off'));
+          evt('opt', null, ((el.name || el.id || tg) + ' = ' + val).slice(0, 200));
+        } catch (er) {}
+      }, { passive: true, capture: true });
+    } catch (e) {}
+
+    // ── 사이트 안 검색: 검색어 + 결과 개수. **0건이면 우리한테 없는 상품을 손님이 찾은 것**이다.
+    try {
+      var kw = (location.search.match(/[?&](keyword|q)=([^&]*)/) || [])[2];
+      if (kw && /search/i.test(location.pathname)) {
+        setTimeout(function () {
+          var seen = {}, n = 0;
+          var as = document.querySelectorAll('a[href*="product_no="], a[href*="/product/"]');
+          for (var i = 0; i < as.length; i++) {
+            var m = (as[i].getAttribute('href') || '').match(/product_no=(\d+)|\/product\/[^/]+\/(\d+)/);
+            var no = m && (m[1] || m[2]); if (no && !seen[no]) { seen[no] = 1; n++; }
+          }
+          evt('search', n > 0 ? 1 : 0, decodeURIComponent(kw).slice(0, 100) + ' → ' + n + '건');
+        }, 2000);
+      }
+    } catch (e) {}
+
+    // ── 폼 제출: 어느 폼을 냈는지만(주문·회원가입·문의). **내용은 안 본다.**
+    try {
+      addEventListener('submit', function (e) {
+        try {
+          var f = e.target || {};
+          evt('form', null, ((f.id || f.name || '') + ' ' + (f.getAttribute && (f.getAttribute('action') || ''))).slice(0, 200));
+        } catch (er) {}
+      }, { passive: true, capture: true });
+    } catch (e) {}
+
+    // ── 페이지 오류: 손님 화면이 실제로 깨졌는지. 페이지당 3건까지(같은 오류가 초당 수백 번 나는 일이 있다).
+    try {
+      var errN = 0;
+      addEventListener('error', function (e) {
+        try {
+          if (++errN > 3) return;
+          var m = (e && (e.message || (e.error && e.error.message))) || '';
+          var src = (e && (e.filename || (e.target && (e.target.src || e.target.href)))) || '';
+          if (!m && !src) return;
+          evt('jserr', 0, (m + ' @ ' + src).slice(0, 200));
+        } catch (er) {}
+      }, true);
     } catch (e) {}
   })();
 
