@@ -16,12 +16,21 @@
   // 상품 상세 식별: ①product_no 쿼리 ②단축URL /surl/P/<no>/ ③SEO URL /product/<이름>/<no>/...
   // ⚠️ 카페24 SEO는 /product/<이름>/<상품번호>/category/<c>/display/<d>/ 형태 → 끝자리(display번호)를
   //    뽑으면 1·2·4 같은 가짜 상품번호가 잡힌다. 반드시 이름 다음 첫 숫자(상품번호)를 뽑을 것.
-  function productNo() {
-    var m = location.search.match(/product_no=(\d+)/);
+  //  ★2026-08-25 규칙 통일: 종전엔 같은 판정이 세 벌(여기 + 상품노출 + 검색개수)이었다.
+  //    한 곳만 고치는 사고를 막으려 인자를 받게 하고 나머지 둘이 이 함수를 부른다.
+  //    u 를 주면 그 주소를, 안 주면 현재 페이지를 본다.
+  //    ⚠ '?' 앞뒤를 갈라 쓴다 — 안 그러면 ?returnUrl=/product/x/12/ 같은 주소에서
+  //      로그인 링크를 상품으로 착각한다.
+  function productNo(u) {
+    var s = u == null ? location.pathname + location.search : String(u);
+    var i = s.indexOf('?');
+    var path = i < 0 ? s : s.slice(0, i);
+    var qs = i < 0 ? '' : s.slice(i);
+    var m = qs.match(/product_no=(\d+)/);
     if (m) return m[1];
-    m = location.pathname.match(/\/surl\/P\/(\d+)/i);
+    m = path.match(/\/surl\/P\/(\d+)/i);
     if (m) return m[1];
-    m = location.pathname.match(/\/product\/[^/]+\/(\d+)(?:\/|$)/);
+    m = path.match(/\/product\/[^/]+\/(\d+)(?:[\/#?]|$)/);
     if (m) return m[1];
     return '';
   }
@@ -357,9 +366,8 @@
           es.forEach(function (x) {
             if (!x.isIntersecting || seenN >= 60) return;
             var h = x.target.getAttribute('href') || '';
-            var m = h.match(/product_no=(\d+)/) || h.match(/\/product\/[^/]+\/(\d+)(?:\/|$)/)
-                    || h.match(/\/surl\/P\/(\d+)/i);
-            if (m && !seenP[m[1]]) { seenP[m[1]] = 1; seenN++; }
+            var no = productNo(h);
+            if (no && !seenP[no]) { seenP[no] = 1; seenN++; }
             io.unobserve(x.target);
           });
         }, { threshold: 0.5 });
@@ -400,8 +408,8 @@
           var seen = {}, n = 0;
           var as = document.querySelectorAll('a[href*="product_no="], a[href*="/product/"]');
           for (var i = 0; i < as.length; i++) {
-            var m = (as[i].getAttribute('href') || '').match(/product_no=(\d+)|\/product\/[^/]+\/(\d+)/);
-            var no = m && (m[1] || m[2]); if (no && !seen[no]) { seen[no] = 1; n++; }
+            var no = productNo(as[i].getAttribute('href') || '');
+            if (no && !seen[no]) { seen[no] = 1; n++; }
           }
           evt('search', n > 0 ? 1 : 0, decodeURIComponent(kw).slice(0, 100) + ' → ' + n + '건');
         }, 2000);
@@ -425,9 +433,23 @@
         try {
           if (++errN > 3) return;
           var m = (e && (e.message || (e.error && e.error.message))) || '';
-          var src = (e && (e.filename || (e.target && (e.target.src || e.target.href)))) || '';
+          var tg = e && e.target;
+          var src = (e && (e.filename || (tg && (tg.src || tg.href)))) || '';
           if (!m && !src) return;
-          evt('jserr', 0, (m + ' @ ' + src).slice(0, 200));
+          // ★ 2026-08-26 HNP_JSERRTAG_0826: 리소스 로드 실패는 message 가 비어 있어
+          //   '무엇이' 실패했는지 알 수 없었다(세라펙스 메인 30일 419건, 재현 실패).
+          //   태그·id·class 를 앞에 적어 다음 발생부터 범인이 보이게 한다.
+          var w = '';
+          try {
+            if (tg && tg.nodeType === 1 && tg.tagName) {
+              w = '<' + tg.tagName.toLowerCase()
+                + (tg.id ? '#' + tg.id : '')
+                + (typeof tg.className === 'string' && tg.className
+                    ? '.' + tg.className.trim().split(/\s+/)[0] : '')
+                + '> ';
+            }
+          } catch (er2) {}
+          evt('jserr', 0, (w + m + ' @ ' + src).slice(0, 200));
         } catch (er) {}
       }, true);
     } catch (e) {}
