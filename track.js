@@ -340,12 +340,14 @@
   // ★설계 원칙은 2d·2e 와 같다: 남의 코드 안 건드림 · 손님 화면 안 막음 · 전부 try 안.
   // ⛔alert/confirm 절대 금지(화면이 멈춘다). 띠(div)로만 띄운다.
   (function () {
-    var asked = 0;                                        // 한 페이지에 한 번(세션 상한은 서버가)
+    var asked = 0, lastBox = 0;   // 같은 칸은 한 번만 묻는다(세션 상한은 서버가 다시 본다)
     function nurl() { return String(EP || '').replace(/\/b$/, '/n'); }
     function report(id) { try { fetch(nurl() + '?click=' + id, { mode: 'cors' }); } catch (e) {} }
     function bar(d) {
       try {
-        if (document.getElementById('hnp-nudge') || !document.body) return;
+        if (!document.body) return;
+        var old = document.getElementById('hnp-nudge');
+        if (old && old.parentNode) old.parentNode.removeChild(old);   // 새 안내로 갈아 끼운다
         var b = document.createElement('div');
         b.id = 'hnp-nudge';
         b.setAttribute('style', 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;'
@@ -383,8 +385,11 @@
         var tx = ((el && (el.innerText || el.textContent)) || '').slice(0, 120);
         var m = tx.match(/(\d+)\s*박스/);
         if (!m) return;
-        asked = 1;
-        ask('&box=' + m[1]);
+        var b = parseInt(m[1], 10);
+        if (b === lastBox) return;      // 같은 칸을 또 눌렀다 — 묻지 않는다
+        lastBox = b;
+        asked = 1;                      // 옵션을 골랐으면 30초 안내는 더 이상 안 띄운다
+        ask('&box=' + b);
       } catch (er) {}
     }, { passive: true, capture: true });
     // ② 상세를 오래 본 사람 — **활동시간**으로 잰다(탭이 뒤로 가거나 가만히 있으면 안 쌓인다).
