@@ -402,7 +402,7 @@
     // ① 박스 옵션을 고른 순간
     addEventListener('click', function (e) {
       try {
-        if (asked || !EP) return;
+        if (!EP) return;   // ⛔asked 로 막지 않는다 — 그러면 첫 클릭 한 번만 묻게 된다
         var el = e.target && e.target.closest ? e.target.closest('li,button,a,div,span') : null;
         var tx = ((el && (el.innerText || el.textContent)) || '').slice(0, 120);
         var m = tx.match(/(\d+)\s*박스/);
