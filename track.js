@@ -408,7 +408,8 @@
         var m = tx.match(/(\d+)\s*박스/);
         if (!m) return;
         var b = parseInt(m[1], 10);
-        if (b === lastBox) return;      // 같은 칸을 또 눌렀다 — 묻지 않는다
+        // ⚖사장님 지시(2026-09-21): 고를 때마다 띄운다. 같은 칸도 다시 묻는다.
+        //   횟수 상한은 서버 설정(per_session)이 정한다 — 여기서 막지 않는다.
         lastBox = b;
         asked = 1;                      // 옵션을 골랐으면 30초 안내는 더 이상 안 띄운다
         ask('&box=' + b);
