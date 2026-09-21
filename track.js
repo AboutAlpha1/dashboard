@@ -342,7 +342,23 @@
   (function () {
     var asked = 0, lastBox = 0;   // 같은 칸은 한 번만 묻는다(세션 상한은 서버가 다시 본다)
     function nurl() { return String(EP || '').replace(/\/b$/, '/n'); }
-    function report(id) { try { fetch(nurl() + '?click=' + id, { mode: 'cors' }); } catch (e) {} }
+    function report(id) {
+      // keepalive — 페이지를 떠나도 이 요청은 끝까지 간다
+      try { fetch(nurl() + '?click=' + id, { mode: 'cors', keepalive: true }); } catch (e) {}
+    }
+    function go(d) {
+      report(d.nudge_id);
+      if (!d.link) return;
+      try {
+        var u = d.link;
+        // 가입/로그인 뒤 보던 상품으로 돌아오게
+        if (u.indexOf('returnUrl') < 0) {
+          u += (u.indexOf('?') < 0 ? '?' : '&') + 'returnUrl='
+             + encodeURIComponent(location.pathname + location.search);
+        }
+        setTimeout(function () { location.href = u; }, 60);   // 보고가 나갈 틈을 준다
+      } catch (e) {}
+    }
     function bar(d) {
       try {
         if (!document.body) return;
@@ -362,8 +378,14 @@
         x.setAttribute('style', 'background:transparent;border:1px solid rgba(255,255,255,.35);'
           + 'color:#fff;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer');
         x.addEventListener('click', function (e) { e.stopPropagation(); b.parentNode.removeChild(b); });
-        b.addEventListener('click', function () { report(d.nudge_id); });
-        b.appendChild(t); b.appendChild(x);
+        b.addEventListener('click', function () { go(d); });
+        if (d.link) b.setAttribute('role', 'link');
+        if (d.link) {
+          var go_ = document.createElement('span');
+          go_.textContent = '받기 ›';
+          go_.setAttribute('style', 'font-weight:600;white-space:nowrap;opacity:.95');
+          b.appendChild(t); b.appendChild(go_); b.appendChild(x);
+        } else { b.appendChild(t); b.appendChild(x); }
         document.body.appendChild(b);
       } catch (e) { /* 안내가 실패해도 손님 화면은 멀쩡해야 한다 */ }
     }
