@@ -389,6 +389,20 @@
         document.body.appendChild(b);
       } catch (e) { /* 안내가 실패해도 손님 화면은 멀쩡해야 한다 */ }
     }
+    // 페이지 글자에서 「N박스 … 가격원」을 긁어 가격표를 만든다.
+    //   ⛔선택자에 기대지 않는다(스킨이 바뀌어도 안 깨진다). 못 읽으면 그냥 안 보낸다.
+    function priceMap() {
+      try {
+        var txt = (document.body && (document.body.innerText || document.body.textContent)) || '';
+        var re = /(\d+)\s*박스[^
+]{0,40}?([\d,]{4,})\s*원/g, m, seen = {}, out = [];
+        while ((m = re.exec(txt)) && out.length < 8) {
+          var k = parseInt(m[1], 10), v = parseInt(m[2].replace(/,/g, ''), 10);
+          if (k > 0 && k < 20 && v > 1000 && !seen[k]) { seen[k] = 1; out.push(k + ':' + v); }
+        }
+        return out.length ? '&prices=' + out.join(',') : '';
+      } catch (e) { return ''; }
+    }
     function ask(q) {
       try {
         fetch(nurl() + '?sid=' + encodeURIComponent(sid) + '&vid=' + encodeURIComponent(vid)
@@ -412,7 +426,7 @@
         //   횟수 상한은 서버 설정(per_session)이 정한다 — 여기서 막지 않는다.
         lastBox = b;
         asked = 1;                      // 옵션을 골랐으면 30초 안내는 더 이상 안 띄운다
-        ask('&box=' + b);
+        ask('&box=' + b + priceMap());
       } catch (er) {}
     }, { passive: true, capture: true });
     // ② 상세를 오래 본 사람 — **활동시간**으로 잰다(탭이 뒤로 가거나 가만히 있으면 안 쌓인다).
