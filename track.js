@@ -332,6 +332,88 @@
     } catch (e) {}
   })();
 
+
+  // 2f) 업셀 안내 — 박스 옵션을 누를 때 **한 번만** 서버에 묻는다 (HNP_NUDGE 2026-09-21)
+  //
+  // ⛔폴링이 아니다. 방아쇠가 「옵션을 눌렀다」는 사건이라 그 순간 한 번이면 된다
+  //   (박스 옵션 클릭은 하루 316번 — 10초 폴링이면 하루 10만 번이었다).
+  // ★설계 원칙은 2d·2e 와 같다: 남의 코드 안 건드림 · 손님 화면 안 막음 · 전부 try 안.
+  // ⛔alert/confirm 절대 금지(화면이 멈춘다). 띠(div)로만 띄운다.
+  (function () {
+    var asked = 0;                                        // 한 페이지에 한 번(세션 상한은 서버가)
+    function nurl() { return String(EP || '').replace(/\/b$/, '/n'); }
+    function report(id) { try { fetch(nurl() + '?click=' + id, { mode: 'cors' }); } catch (e) {} }
+    function bar(d) {
+      try {
+        if (document.getElementById('hnp-nudge') || !document.body) return;
+        var b = document.createElement('div');
+        b.id = 'hnp-nudge';
+        b.setAttribute('style', 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;'
+          + 'background:#1f2330;color:#fff;border-radius:12px;padding:13px 14px;font-size:14px;'
+          + 'line-height:1.45;box-shadow:0 8px 28px rgba(0,0,0,.28);display:flex;gap:10px;'
+          + 'align-items:center;font-family:inherit;cursor:pointer');
+        var t = document.createElement('div');
+        t.style.flex = '1';
+        t.textContent = d.text;                           // ★textContent — 문구가 HTML로 실행되지 않게
+        var x = document.createElement('button');
+        x.textContent = '닫기';
+        x.setAttribute('style', 'background:transparent;border:1px solid rgba(255,255,255,.35);'
+          + 'color:#fff;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer');
+        x.addEventListener('click', function (e) { e.stopPropagation(); b.parentNode.removeChild(b); });
+        b.addEventListener('click', function () { report(d.nudge_id); });
+        b.appendChild(t); b.appendChild(x);
+        document.body.appendChild(b);
+      } catch (e) { /* 안내가 실패해도 손님 화면은 멀쩡해야 한다 */ }
+    }
+    function ask(q) {
+      try {
+        fetch(nurl() + '?sid=' + encodeURIComponent(sid) + '&vid=' + encodeURIComponent(vid)
+              + '&site=' + encodeURIComponent(location.hostname)
+              + '&mid=' + encodeURIComponent(memberId()) + q, { mode: 'cors' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { if (d && d.text) bar(d); })
+          .catch(function () {});
+      } catch (e) {}
+    }
+    // ① 박스 옵션을 고른 순간
+    addEventListener('click', function (e) {
+      try {
+        if (asked || !EP) return;
+        var el = e.target && e.target.closest ? e.target.closest('li,button,a,div,span') : null;
+        var tx = ((el && (el.innerText || el.textContent)) || '').slice(0, 120);
+        var m = tx.match(/(\d+)\s*박스/);
+        if (!m) return;
+        asked = 1;
+        ask('&box=' + m[1]);
+      } catch (er) {}
+    }, { passive: true, capture: true });
+    // ② 상세를 오래 본 사람 — **활동시간**으로 잰다(탭이 뒤로 가거나 가만히 있으면 안 쌓인다).
+    //    3)번 체류 블록과 같은 방식. 몇 초인지는 서버가 정한다(여기선 값만 넘긴다).
+    (function () {
+      try {
+        if (!/\/product\/|\/surl\//i.test(location.pathname)) return;   // 상세에서만
+        var ms = 0, tick = Date.now(), act = Date.now(), vis = !document.hidden, done = 0;
+        ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (ev) {
+          addEventListener(ev, function () { act = Date.now(); }, { passive: true });
+        });
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) { vis = false; } else { vis = true; tick = Date.now(); }
+        });
+        setInterval(function () {
+          try {
+            var n = Date.now();
+            if (vis && (n - act) < IDLE_MS) ms += n - tick;
+            tick = n;
+            if (!done && !asked && EP && ms >= 30000) {
+              done = 1;
+              ask('&dwell=' + Math.round(ms / 1000));
+            }
+          } catch (e) {}
+        }, 1000);
+      } catch (e) {}
+    })();
+  })();
+
   // 2e) 전방위 기록 — HNP_ALLREC_0819 (사장님 지시: 들어온 순간부터 웬만하면 다 남긴다)
   //
   // ★설계 원칙 세 가지 — 어긴 적이 있어서 적어 둔다.
